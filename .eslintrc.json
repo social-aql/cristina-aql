@@ -1,0 +1,18 @@
+{
+  "extends": ["next/core-web-vitals"],
+  "rules": {
+    "no-restricted-syntax": [
+      "warn",
+      {
+        "selector": "Literal[value=/^#[0-9a-fA-F]{3,8}$/]",
+        "message": "Hex colors must come from theme tokens. Import from @/themes/{theme-id}/tokens."
+      }
+    ]
+  },
+  "overrides": [
+    {
+      "files": ["src/themes/**/*.{ts,tsx}", "src/app/globals.css"],
+      "rules": { "no-restricted-syntax": "off" }
+    }
+  ]
+}
