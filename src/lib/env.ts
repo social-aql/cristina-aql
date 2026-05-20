@@ -9,12 +9,12 @@ const envSchema = z.object({
   NEXT_PUBLIC_APP_URL: z.string().url(),
   GOOGLE_AI_API_KEY: z.string().min(1),
   AI_DEFAULT_TIER: z.enum(['batch', 'deep']).optional(),
-  CRON_SECRET: z.string().min(1).optional(),
+  CRON_SECRET: z.string().optional(),
   NEXT_PUBLIC_ENABLE_MOCK_PROVIDER: z.string().optional(),
   META_APP_ID: z.string().optional(),
   META_APP_SECRET: z.string().optional(),
   META_GRAPH_API_VERSION: z.string().optional(),
-  META_REDIRECT_URI: z.string().url().optional(),
+  META_REDIRECT_URI: z.string().optional(),
 });
 
 export const env = envSchema.parse({
