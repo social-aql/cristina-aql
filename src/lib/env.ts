@@ -7,6 +7,10 @@ const envSchema = z.object({
   ANTHROPIC_API_KEY: z.string().min(1).optional(),
   ENCRYPTION_KEY: z.string().min(1),
   NEXT_PUBLIC_APP_URL: z.string().url(),
+  GOOGLE_AI_API_KEY: z.string().min(1),
+  AI_DEFAULT_TIER: z.enum(['batch', 'deep']).optional(),
+  CRON_SECRET: z.string().min(1).optional(),
+  NEXT_PUBLIC_ENABLE_MOCK_PROVIDER: z.string().optional(),
 });
 
 export const env = envSchema.parse({
@@ -16,4 +20,8 @@ export const env = envSchema.parse({
   ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY,
   ENCRYPTION_KEY: process.env.ENCRYPTION_KEY,
   NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
+  GOOGLE_AI_API_KEY: process.env.GOOGLE_AI_API_KEY,
+  AI_DEFAULT_TIER: process.env.AI_DEFAULT_TIER,
+  CRON_SECRET: process.env.CRON_SECRET,
+  NEXT_PUBLIC_ENABLE_MOCK_PROVIDER: process.env.NEXT_PUBLIC_ENABLE_MOCK_PROVIDER,
 });

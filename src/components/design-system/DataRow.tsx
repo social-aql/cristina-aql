@@ -7,11 +7,11 @@ interface DataRowProps {
   label: string;
   description: React.ReactNode;
   status: string;
-  tone: 'positive' | 'negative';
+  tone: 'positive' | 'negative' | 'neutral';
 }
 
 export function DataRow({ label, description, status, tone }: DataRowProps) {
-  const accentColor = tone === 'positive' ? colors.accentLime : colors.accentCoral;
+  const accentColor = tone === 'positive' ? colors.accentLime : tone === 'neutral' ? colors.textSecondary : colors.accentCoral;
 
   return (
     <div
