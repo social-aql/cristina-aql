@@ -8,8 +8,8 @@ const GRAPH_VERSION = () => process.env.META_GRAPH_API_VERSION ?? 'v21.0';
 const BASE = () => `https://graph.facebook.com/${GRAPH_VERSION()}`;
 
 const SCOPES = [
-  'instagram_business_basic',
-  'instagram_business_manage_insights',
+  'instagram_basic',
+  'instagram_manage_insights',
   'pages_show_list',
   'pages_read_engagement',
   'business_management',
