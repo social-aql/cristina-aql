@@ -14,7 +14,7 @@ export default async function AccountsPage() {
 
   const { data: accounts } = await supabase
     .from('accounts')
-    .select('id, display_name, handle, provider_id, status')
+    .select('id, display_name, handle, provider_id, status, last_sync_at')
     .eq('user_id', user!.id)
     .order('created_at', { ascending: false });
 

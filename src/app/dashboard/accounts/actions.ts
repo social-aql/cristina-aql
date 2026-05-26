@@ -120,3 +120,36 @@ export async function disconnectAccountAction(
 
   return { success: true };
 }
+
+export async function syncAccountAction(
+  accountId: string
+): Promise<{ success: true; postsCount: number } | { success: false; error: string }> {
+  const supabase = await createSupabaseServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { success: false, error: 'unauthenticated' };
+
+  const { data: account } = await supabase
+    .from('accounts')
+    .select('id')
+    .eq('id', accountId)
+    .eq('user_id', user.id)
+    .single();
+  if (!account) return { success: false, error: 'not_found' };
+
+  try {
+    const result = await syncAccount(accountId, user.id);
+    revalidatePath('/dashboard');
+    revalidatePath('/dashboard/accounts');
+    revalidatePath('/dashboard/posts');
+    return { success: true, postsCount: result.postsInserted };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'unknown_sync_error';
+    await supabase
+      .from('accounts')
+      .update({ last_sync_error: message })
+      .eq('id', accountId);
+    return { success: false, error: message };
+  }
+}
