@@ -80,22 +80,26 @@ export async function GET(request: NextRequest) {
         .select('id')
         .single();
 
+      if (!row) {
+        const response = NextResponse.redirect(
+          `${origin}/dashboard/accounts?warning=sync_skipped`
+        );
+        response.cookies.delete('meta_instagram_oauth_state');
+        return response;
+      }
+
       try {
-        if (row) {
-          await syncAccount(row.id, user.id);
-        }
+        await syncAccount(row.id, user.id);
       } catch (syncError) {
         console.error('[meta callback] initial sync failed:', syncError);
-        if (row) {
-          await supabase
-            .from('accounts')
-            .update({
-              last_sync_error:
-                syncError instanceof Error ? syncError.message : String(syncError),
-              status: 'error',
-            })
-            .eq('id', row.id);
-        }
+        void supabase
+          .from('accounts')
+          .update({
+            last_sync_error:
+              syncError instanceof Error ? syncError.message : String(syncError),
+            status: 'error',
+          })
+          .eq('id', row.id);
         const response = NextResponse.redirect(
           `${origin}/dashboard/accounts?warning=initial_sync_failed`
         );
