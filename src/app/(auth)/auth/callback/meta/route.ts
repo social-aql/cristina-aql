@@ -4,6 +4,7 @@ import { createSupabaseRouteHandlerClient } from '@/lib/supabase/server';
 import { metaInstagramProvider } from '@/providers/meta-instagram';
 import { buildTokenForPage } from '@/providers/meta-instagram/oauth';
 import { encryptJson } from '@/lib/crypto';
+import { syncAccount } from '@/lib/sync/sync-account';
 
 const REDIRECT_URI = () =>
   process.env.META_REDIRECT_URI ??
@@ -16,18 +17,18 @@ export async function GET(request: NextRequest) {
   const errorParam = searchParams.get('error');
 
   if (errorParam) {
-    return NextResponse.redirect(`${origin}/accounts?error=meta_denied`);
+    return NextResponse.redirect(`${origin}/dashboard/accounts?error=meta_denied`);
   }
 
   if (!code) {
-    return NextResponse.redirect(`${origin}/accounts?error=meta_no_code`);
+    return NextResponse.redirect(`${origin}/dashboard/accounts?error=meta_no_code`);
   }
 
   // CSRF: verify state
   const cookieStore = await cookies();
-  const storedState = cookieStore.get('meta_oauth_state')?.value;
+  const storedState = cookieStore.get('meta_instagram_oauth_state')?.value;
   if (!storedState || storedState !== state) {
-    return NextResponse.redirect(`${origin}/accounts?error=meta_csrf`);
+    return NextResponse.redirect(`${origin}/dashboard/accounts?error=meta_csrf`);
   }
 
   try {
@@ -48,7 +49,7 @@ export async function GET(request: NextRequest) {
     const igAccounts = await metaInstagramProvider.listAccounts(partialToken);
 
     if (igAccounts.length === 0) {
-      return NextResponse.redirect(`${origin}/accounts?error=meta_no_ig_account`);
+      return NextResponse.redirect(`${origin}/dashboard/accounts?error=meta_no_ig_account`);
     }
 
     if (igAccounts.length === 1) {
@@ -61,22 +62,49 @@ export async function GET(request: NextRequest) {
           new Date(Date.now() + 5_184_000_000).toISOString()
       );
 
-      await supabase.from('accounts').upsert(
-        {
-          user_id: user.id,
-          provider_id: 'meta-instagram',
-          external_account_id: ig.externalId,
-          display_name: ig.displayName,
-          handle: ig.handle,
-          avatar_url: ig.avatarUrl,
-          encrypted_tokens: encryptJson(token),
-          status: 'active',
-        },
-        { onConflict: 'user_id,provider_id,external_account_id' }
-      );
+      const { data: row } = await supabase
+        .from('accounts')
+        .upsert(
+          {
+            user_id: user.id,
+            provider_id: 'meta-instagram',
+            external_account_id: ig.externalId,
+            display_name: ig.displayName,
+            handle: ig.handle,
+            avatar_url: ig.avatarUrl,
+            encrypted_tokens: encryptJson(token),
+            status: 'active',
+          },
+          { onConflict: 'user_id,provider_id,external_account_id' }
+        )
+        .select('id')
+        .single();
 
-      const response = NextResponse.redirect(`${origin}/accounts`);
-      response.cookies.delete('meta_oauth_state');
+      try {
+        if (row) {
+          await syncAccount(row.id, user.id);
+        }
+      } catch (syncError) {
+        console.error('[meta callback] initial sync failed:', syncError);
+        if (row) {
+          await supabase
+            .from('accounts')
+            .update({
+              last_sync_error:
+                syncError instanceof Error ? syncError.message : String(syncError),
+              status: 'error',
+            })
+            .eq('id', row.id);
+        }
+        const response = NextResponse.redirect(
+          `${origin}/dashboard/accounts?warning=initial_sync_failed`
+        );
+        response.cookies.delete('meta_instagram_oauth_state');
+        return response;
+      }
+
+      const response = NextResponse.redirect(`${origin}/dashboard/accounts`);
+      response.cookies.delete('meta_instagram_oauth_state');
       return response;
     }
 
@@ -88,7 +116,7 @@ export async function GET(request: NextRequest) {
       pageId: (a.raw as { pageId: string }).pageId,
     }));
 
-    const response = NextResponse.redirect(`${origin}/accounts/select`);
+    const response = NextResponse.redirect(`${origin}/dashboard/accounts/select`);
     response.cookies.set('meta_pending_accounts', JSON.stringify(selectData), {
       httpOnly: true,
       maxAge: 600,
@@ -102,10 +130,10 @@ export async function GET(request: NextRequest) {
       partialToken.expiresAt ?? '',
       { httpOnly: true, maxAge: 600 }
     );
-    response.cookies.delete('meta_oauth_state');
+    response.cookies.delete('meta_instagram_oauth_state');
     return response;
   } catch (err) {
     console.error('[meta callback]', err instanceof Error ? err.message : err);
-    return NextResponse.redirect(`${origin}/accounts?error=meta_callback_failed`);
+    return NextResponse.redirect(`${origin}/dashboard/accounts?error=meta_callback_failed`);
   }
 }
