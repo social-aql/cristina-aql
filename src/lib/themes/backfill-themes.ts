@@ -2,10 +2,13 @@ import 'server-only';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { classifyThemesBatch } from './classify-with-ai';
 import { detectThemeByKeywords } from './detect-theme';
+import { AiProviderError } from '@/ai/providers/types';
 import type { ThemeDetectionResult } from './types';
 
 const BATCH_SIZE = 8;
 const MAX_BATCHES = 20;
+const BATCH_DELAY_MS = 8000;
+const RATE_LIMIT_RETRY_MS = 65000;
 
 export async function backfillThemesForUser(userId: string): Promise<{
   processed: number;
@@ -35,27 +38,42 @@ export async function backfillThemesForUser(userId: string): Promise<{
   let errors = 0;
 
   for (let i = 0; i < posts.length; i += BATCH_SIZE) {
-    // 6s between batches — Gemini free tier is 10–15 RPM
-    if (i > 0) await new Promise(resolve => setTimeout(resolve, 6000));
+    // Throttle to stay under Gemini free-tier RPM (10–15 RPM)
+    if (i > 0) await new Promise(resolve => setTimeout(resolve, BATCH_DELAY_MS));
 
     const batch = posts.slice(i, i + BATCH_SIZE);
+    const batchInputs = batch.map((p) => ({ caption: p.caption ?? '', hashtags: p.hashtags ?? [] }));
 
     let results: ThemeDetectionResult[];
     try {
-      results = await classifyThemesBatch(
-        batch.map((p) => ({ caption: p.caption ?? '', hashtags: p.hashtags ?? [] }))
-      );
+      results = await classifyThemesBatch(batchInputs);
       aiClassified += results.length;
     } catch (err) {
-      aiErrors += batch.length;
-      if (errorSamples.length < 3) {
-        errorSamples.push(err instanceof Error ? err.message : String(err));
+      // Rate limited: wait 65s and retry once before falling back to keywords
+      if (err instanceof AiProviderError && err.rateLimited) {
+        console.warn(`[backfill] Batch ${i} rate limited, retrying after ${RATE_LIMIT_RETRY_MS / 1000}s…`);
+        try {
+          await new Promise(resolve => setTimeout(resolve, RATE_LIMIT_RETRY_MS));
+          results = await classifyThemesBatch(batchInputs);
+          aiClassified += results.length;
+        } catch (retryErr) {
+          aiErrors += batch.length;
+          if (errorSamples.length < 3) {
+            errorSamples.push(retryErr instanceof Error ? retryErr.message : String(retryErr));
+          }
+          console.warn(`[backfill] Batch ${i} retry failed, using keyword fallback:`, retryErr);
+          results = batch.map((p) => detectThemeByKeywords({ caption: p.caption, hashtags: p.hashtags ?? [] }));
+          keywordClassified += results.length;
+        }
+      } else {
+        aiErrors += batch.length;
+        if (errorSamples.length < 3) {
+          errorSamples.push(err instanceof Error ? err.message : String(err));
+        }
+        console.warn(`[backfill] Batch ${i} AI failed, using keyword fallback:`, err);
+        results = batch.map((p) => detectThemeByKeywords({ caption: p.caption, hashtags: p.hashtags ?? [] }));
+        keywordClassified += results.length;
       }
-      console.warn(`[backfill] Batch ${i} AI failed, using keyword fallback:`, err);
-      results = batch.map((p) =>
-        detectThemeByKeywords({ caption: p.caption, hashtags: p.hashtags ?? [] })
-      );
-      keywordClassified += results.length;
     }
 
     for (let j = 0; j < batch.length; j++) {
