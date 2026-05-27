@@ -35,6 +35,9 @@ export async function backfillThemesForUser(userId: string): Promise<{
   let errors = 0;
 
   for (let i = 0; i < posts.length; i += BATCH_SIZE) {
+    // 6s between batches — Gemini free tier is 10–15 RPM
+    if (i > 0) await new Promise(resolve => setTimeout(resolve, 6000));
+
     const batch = posts.slice(i, i + BATCH_SIZE);
 
     let results: ThemeDetectionResult[];
