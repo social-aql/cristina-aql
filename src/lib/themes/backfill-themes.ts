@@ -2,7 +2,6 @@ import 'server-only';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { classifyThemesBatch } from './classify-with-ai';
 import { detectThemeByKeywords } from './detect-theme';
-import { AiProviderError } from '@/ai/providers/types';
 import type { ThemeDetectionResult } from './types';
 
 const BATCH_SIZE = 8;
@@ -50,7 +49,9 @@ export async function backfillThemesForUser(userId: string): Promise<{
       aiClassified += results.length;
     } catch (err) {
       // Rate limited: wait 65s and retry once before falling back to keywords
-      if (err instanceof AiProviderError && err.rateLimited) {
+      const errMsg = err instanceof Error ? err.message : String(err);
+      const isRateLimited = errMsg.toLowerCase().includes('rate limit') || errMsg.includes('429') || errMsg.toLowerCase().includes('quota');
+      if (isRateLimited) {
         console.warn(`[backfill] Batch ${i} rate limited, retrying after ${RATE_LIMIT_RETRY_MS / 1000}s…`);
         try {
           await new Promise(resolve => setTimeout(resolve, RATE_LIMIT_RETRY_MS));

@@ -113,7 +113,6 @@ export async function classifyThemeWithAi(input: ClassifyInput): Promise<ThemeDe
     maxTokens: 256,
     temperature: 0.1,
     jsonMode: true,
-    responseSchema: SINGLE_RESPONSE_SCHEMA,
   });
 
   const c = parseClassifyRaw(result.parsed);
@@ -146,7 +145,6 @@ export async function classifyThemesBatch(inputs: ClassifyInput[]): Promise<Them
     maxTokens: 2048 + inputs.length * 256,
     temperature: 0.1,
     jsonMode: true,
-    responseSchema: BATCH_RESPONSE_SCHEMA,
   });
 
   const parsed = result.parsed as { classifications?: unknown[] };
