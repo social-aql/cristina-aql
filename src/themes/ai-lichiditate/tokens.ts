@@ -20,6 +20,7 @@ export const colors = {
   accentLimeDim: '#7A9A2E',
   accentCoral: '#FF5A4E',
   accentCoralDim: '#8C2F28',
+  accentAmber: '#D4890A',
 
   // Borders
   borderDefault: '#262626',
