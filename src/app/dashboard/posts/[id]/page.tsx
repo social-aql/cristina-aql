@@ -9,6 +9,10 @@ import { Tag } from '@/components/design-system/Tag';
 import { PostKpiGrid } from '@/components/posts/PostKpiGrid';
 import { PostMetricsTimeline } from '@/components/posts/PostMetricsTimeline';
 import { formatLargeNumber } from '@/lib/kpis/formatters';
+import { extractHook, classifyHookType, countCaptionWords, detectSaveCta } from '@/lib/content-analysis/caption-utils';
+import { runPostDiagnostics } from '@/lib/diagnostics/post-diagnostics';
+import { PostDiagnosticChecklist } from '@/components/posts/PostDiagnosticChecklist';
+import type { PostDiagnosticInput } from '@/lib/diagnostics/post-diagnostics';
 
 const THEME_LABELS: Record<string, string> = {
   fed: 'FED · Politică Monetară',
@@ -29,6 +33,12 @@ export default async function PostDetailPage({
 }) {
   const { id } = await params;
   const supabase = await createSupabaseServerClient();
+
+  function safeAvg(values: Array<number | null | undefined>): number | null {
+    const valid = values.filter((v): v is number => v != null && v > 0);
+    if (valid.length === 0) return null;
+    return valid.reduce((a, b) => a + b, 0) / valid.length;
+  }
 
   const {
     data: { user },
@@ -52,6 +62,73 @@ export default async function PostDetailPage({
     .select('captured_at, reach, er_by_reach, saves_per_reach, sends_per_reach')
     .eq('post_id', id)
     .order('captured_at', { ascending: true });
+
+  // Account averages for benchmarking
+  const { data: accountPosts } = await supabase
+    .from('posts_with_latest_metrics')
+    .select('er_by_reach, saves_per_reach, sends_per_reach, caption')
+    .eq('account_id', (post as Record<string, unknown>).account_id as string)
+    .not('er_by_reach', 'is', null)
+    .gt('er_by_reach', 0)
+    .limit(100);
+
+  const avgEr = safeAvg((accountPosts ?? []).map(r => r.er_by_reach));
+  const avgSaves = safeAvg((accountPosts ?? []).map(r => r.saves_per_reach));
+  const avgSends = safeAvg((accountPosts ?? []).map(r => r.sends_per_reach));
+
+  // Best hook type: most frequent among top 30% by ER
+  let accountBestHookType: string | null = null;
+  if (accountPosts && accountPosts.length >= 5) {
+    const sorted = [...accountPosts]
+      .filter(p => p.er_by_reach != null)
+      .sort((a, b) => (b.er_by_reach ?? 0) - (a.er_by_reach ?? 0));
+    const topN = sorted.slice(0, Math.max(3, Math.floor(sorted.length * 0.3)));
+    const hookMap = new Map<string, number>();
+    for (const p of topN) {
+      const ht = classifyHookType(p.caption);
+      hookMap.set(ht, (hookMap.get(ht) ?? 0) + 1);
+    }
+    accountBestHookType = [...hookMap.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? null;
+  }
+
+  const p = post as Record<string, unknown>;
+  const hashtags: string[] = Array.isArray(post.hashtags) ? (post.hashtags as string[]) : [];
+  const wordCount = countCaptionWords(post.caption);
+  const diagnosticInput: PostDiagnosticInput = {
+    id: post.id,
+    caption: post.caption,
+    mediaType: post.media_type,
+    theme: post.theme,
+    themeSecondary: (p.theme_secondary as string | null) ?? null,
+    themeConfidence: (p.theme_confidence as string | null) ?? null,
+    hashtags,
+    publishedAt: post.published_at,
+    hook: extractHook(post.caption) || null,
+    hookType: classifyHookType(post.caption),
+    captionWordCount: wordCount,
+    hasSaveCta: detectSaveCta(post.caption),
+    hashtagCount: hashtags.length,
+    captionLength: wordCount < 50 ? 'short' : wordCount < 150 ? 'medium' : 'long',
+    erByReach: post.er_by_reach ?? null,
+    savesPerReach: post.saves_per_reach ?? null,
+    sendsPerReach: post.sends_per_reach ?? null,
+    reach: post.reach ?? null,
+    likes: (p.likes as number | null) ?? null,
+    saves: (p.saves as number | null) ?? null,
+    shares: (p.shares as number | null) ?? null,
+    comments: (p.comments as number | null) ?? null,
+    videoViews: (p.video_views as number | null) ?? null,
+    watchTimeSeconds: (p.watch_time_seconds as number | null) ?? null,
+    saveToLikeRatio: post.save_to_like_ratio ?? null,
+    completionRate: (p.completion_rate as number | null) ?? null,
+    reachRate: post.reach_rate ?? null,
+    accountAvgErByReach: avgEr,
+    accountAvgSavesPerReach: avgSaves,
+    accountAvgSendsPerReach: avgSends,
+    accountBestHookType,
+  };
+
+  const diagnosticResult = runPostDiagnostics(diagnosticInput);
 
   const themeLabel = post.theme ? THEME_LABELS[post.theme] ?? post.theme.toUpperCase() : null;
   const themeTagVariant = post.theme_confidence === 'high' ? 'lime' : 'muted';
@@ -155,13 +232,8 @@ export default async function PostDetailPage({
         )}
       </Card>
 
-      {/* Section 4: AI placeholder */}
-      <Card variant="default">
-        <Eyebrow tone="muted">ANALIZĂ AI · DISPONIBIL ÎN CURÂND</Eyebrow>
-        <div style={{ marginTop: 8 }}>
-          <Mono tone="muted">Analiza AI per postare va fi disponibilă după integrarea cu Prompt 03b.</Mono>
-        </div>
-      </Card>
+      {/* Section 4: Diagnostic Checklist */}
+      <PostDiagnosticChecklist result={diagnosticResult} />
 
       {/* Footer nav */}
       <div>
