@@ -8,11 +8,10 @@ export function extractHook(caption: string | null): string {
 export function classifyHookType(caption: string | null): HookType {
   if (!caption) return 'other';
   const trimmed = caption.trim();
-  const first50 = trimmed.slice(0, 50);
   if (/^["""„]/.test(trimmed)) return 'quote';
   if (/^\d/.test(trimmed)) return 'number';
   if (/^(nu |fă |evit|start|înce|stop)/i.test(trimmed)) return 'command';
-  if (first50.includes('?') || caption.includes('?')) return 'question';
+  if (caption.includes('?')) return 'question';
   return 'statement';
 }
 
