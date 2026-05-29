@@ -35,6 +35,7 @@ interface SearchParams {
   days?: string;
   sort?: string;
   dir?: string;
+  ids?: string;
 }
 
 export default async function PostsPage({
@@ -85,13 +86,18 @@ export default async function PostsPage({
   if (params.theme) query = query.eq('theme', params.theme);
   if (params.type) query = query.eq('media_type', params.type.toLowerCase());
 
+  const idFilter = params.ids?.split(',').filter(Boolean) ?? [];
+  if (idFilter.length > 0) {
+    query = query.in('id', idFilter);
+  }
+
   const validSortCols = ['published_at', 'er_by_reach', 'saves_per_reach', 'sends_per_reach', 'reach'];
   const col = validSortCols.includes(sortCol) ? sortCol : 'published_at';
   query = query.order(col, { ascending: sortAsc, nullsFirst: false });
 
   const { data: posts } = await query;
 
-  const hasActiveFilters = !!(params.theme || params.type || (params.days && params.days !== '30'));
+  const hasActiveFilters = !!(params.theme || params.type || (params.days && params.days !== '30') || params.ids);
   const hasFilteredPosts = (posts?.length ?? 0) > 0;
 
   const thStyle: React.CSSProperties = {
@@ -181,6 +187,41 @@ export default async function PostsPage({
           filterLink('theme', id, label)
         )}
       </div>
+
+      {idFilter.length > 0 && (
+        <div
+          style={{
+            background: colors.bgCard,
+            border: `1px solid ${colors.accentCoral}`,
+            borderRadius: 6,
+            padding: '10px 16px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+          }}
+        >
+          <span
+            style={{
+              fontFamily: 'var(--font-jetbrains-mono), monospace',
+              fontSize: 12,
+              color: colors.textMuted,
+            }}
+          >
+            AFIȘÂND {idFilter.length} POSTĂRI AFECTATE
+          </span>
+          <Link
+            href="/dashboard/posts"
+            style={{
+              fontFamily: 'var(--font-jetbrains-mono), monospace',
+              fontSize: 11,
+              color: colors.accentLime,
+              textDecoration: 'none',
+            }}
+          >
+            × ȘTERGE FILTRUL
+          </Link>
+        </div>
+      )}
 
       <div
         style={{
