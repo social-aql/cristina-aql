@@ -1,4 +1,5 @@
 import 'server-only';
+import { classifyHookType, classifyCaptionLength, detectSaveCta } from '@/lib/content-analysis/caption-utils';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { THEMES } from '@/lib/themes/theme-keywords';
 
@@ -198,24 +199,6 @@ function safeAvg(values: Array<number | null | undefined>): number | null {
 
 const DOW_LABELS = ['Duminică', 'Luni', 'Marți', 'Miercuri', 'Joi', 'Vineri', 'Sâmbătă'] as const;
 
-function classifyHookType(caption: string | null): PostWithMetrics['hookType'] {
-  if (!caption) return 'other';
-  const trimmed = caption.trim();
-  const first50 = trimmed.slice(0, 50);
-  if (/^["""„]/.test(trimmed)) return 'quote';
-  if (/^\d/.test(trimmed)) return 'number';
-  if (/^(nu |fă |evit|start|înce|stop)/i.test(trimmed)) return 'command';
-  if (first50.includes('?') || caption.includes('?')) return 'question';
-  return 'statement';
-}
-
-function classifyCaptionLength(caption: string | null): 'short' | 'medium' | 'long' {
-  const wordCount = (caption ?? '').split(/\s+/).filter(Boolean).length;
-  if (wordCount < 50) return 'short';
-  if (wordCount < 150) return 'medium';
-  return 'long';
-}
-
 function hashtagBucket(count: number): '0' | '1-3' | '4-6' | '7-15' | '15+' {
   if (count === 0) return '0';
   if (count <= 3) return '1-3';
@@ -261,7 +244,7 @@ function toPostWithMetrics(p: {
     hookType: classifyHookType(caption),
     captionLength: classifyCaptionLength(caption),
     hashtagCount: hashtags.length,
-    hasSaveCta: /salvează|save this|trimite|share this|bookmark|păstrează pentru|salvati/i.test(caption),
+    hasSaveCta: detectSaveCta(caption),
     hourOfDay: dt.getHours(),
     dayOfWeek: DOW_LABELS[dt.getDay()],
   };
