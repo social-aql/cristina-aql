@@ -2,7 +2,7 @@ import React from 'react';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
-import { colors } from '@/themes/ai-lichiditate/tokens';
+import { colors } from '@/themes/platform/tokens';
 import { Eyebrow, H1, Body } from '@/components/design-system/Typography';
 import { Button } from '@/components/design-system/Button';
 import { DataRow } from '@/components/design-system/DataRow';

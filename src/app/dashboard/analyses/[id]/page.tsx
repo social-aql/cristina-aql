@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { AnalysisDetail } from '@/components/analyses/AnalysisDetail';
-import { colors } from '@/themes/ai-lichiditate/tokens';
+import { colors } from '@/themes/platform/tokens';
 import { Mono } from '@/components/design-system/Typography';
 import type { AnalysisType } from '@/ai/analyses/types';
 

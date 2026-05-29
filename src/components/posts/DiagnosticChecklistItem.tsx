@@ -1,6 +1,6 @@
 import React from 'react';
 import type { DiagnosticCheck } from '@/lib/diagnostics/types';
-import { colors } from '@/themes/ai-lichiditate/tokens';
+import { colors } from '@/themes/platform/tokens';
 
 interface Props {
   check: DiagnosticCheck;

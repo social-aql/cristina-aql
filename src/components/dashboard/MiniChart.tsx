@@ -12,7 +12,7 @@ import {
   ResponsiveContainer,
   CartesianGrid,
 } from 'recharts';
-import { colors } from '@/themes/ai-lichiditate/tokens';
+import { colors } from '@/themes/platform/tokens';
 
 interface MiniChartProps {
   data: Array<{ date: string; value: number | null }>;

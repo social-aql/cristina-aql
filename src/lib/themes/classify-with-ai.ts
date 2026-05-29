@@ -1,15 +1,12 @@
 import 'server-only';
 import { getDefaultAiProvider } from '@/ai/registry';
-import { THEMES } from './theme-keywords';
+import { ACTIVE_THEMES } from './theme-keywords';
+import forkConfig from '../../../fork-config';
 import type { ThemeId, ThemeDetectionResult } from './types';
 
-const THEME_IDS = [
-  'fed', 'crypto', 'stocks_us', 'gold', 'forex', 'real_estate',
-  'economy_eu', 'macro', 'education', 'investing_principles',
-  'trading_strategy', 'emerging_markets', 'other',
-] as const;
+const ACTIVE_THEME_IDS = [...ACTIVE_THEMES.map((t) => t.id), 'other'] as const;
 
-const THEME_ENUM_VALUES = [...THEME_IDS] as string[];
+const THEME_ENUM_VALUES = [...ACTIVE_THEME_IDS] as string[];
 
 const SINGLE_ITEM_SCHEMA = {
   type: 'object',
@@ -35,9 +32,9 @@ const BATCH_RESPONSE_SCHEMA = {
   required: ['classifications'],
 };
 
-const SYSTEM_PROMPT = `You are classifying Romanian financial content for a creator's Instagram analytics dashboard.
+const SYSTEM_PROMPT = `You are classifying content for a creator: ${forkConfig.contentNiche.description}
 
-The creator posts about economics, finance, trading, and investing. Many captions are EDUCATIONAL and use specific topics as EXAMPLES — you must distinguish between the MAIN topic of the caption and the examples used.
+Many captions are EDUCATIONAL and use specific topics as EXAMPLES — you must distinguish between the MAIN topic of the caption and the examples used.
 
 For each caption, identify:
 1. PRIMARY THEME: the central topic of the caption
@@ -53,7 +50,7 @@ CRITICAL RULES:
 - A caption JUST about Bitcoin price → PRIMARY: crypto
 
 Available themes (use EXACTLY these IDs):
-${THEMES.map((t) => `- ${t.id}: ${t.description}`).join('\n')}
+${ACTIVE_THEMES.map((t) => `- ${t.id}: ${t.description}`).join('\n')}
 
 For secondary_theme: if there is no clear secondary theme, return the string 'none' (not null, not empty string).
 
@@ -72,7 +69,7 @@ interface ClassifyRaw {
 }
 
 function isValidThemeId(v: unknown): v is ThemeId {
-  return typeof v === 'string' && (THEME_IDS as readonly string[]).includes(v);
+  return typeof v === 'string' && (ACTIVE_THEME_IDS as readonly string[]).includes(v);
 }
 
 function normalizeSecondary(value: string | null | undefined): ThemeId | null {

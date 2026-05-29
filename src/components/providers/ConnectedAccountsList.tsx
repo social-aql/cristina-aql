@@ -5,7 +5,7 @@ import { DataRow } from '@/components/design-system/DataRow';
 import { Mono } from '@/components/design-system/Typography';
 import { DisconnectAccountDialog } from './DisconnectAccountDialog';
 import { SyncAccountButton } from './SyncAccountButton';
-import { colors } from '@/themes/ai-lichiditate/tokens';
+import { colors } from '@/themes/platform/tokens';
 
 interface Account {
   id: string;

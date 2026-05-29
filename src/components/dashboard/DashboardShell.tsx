@@ -6,7 +6,8 @@ import { OverviewTab } from '@/components/dashboard/tabs/OverviewTab';
 import { PerformanceTab } from '@/components/dashboard/tabs/PerformanceTab';
 import { ContentTab } from '@/components/dashboard/tabs/ContentTab';
 import { AiInsightsTab } from '@/components/dashboard/tabs/AiInsightsTab';
-import { colors } from '@/themes/ai-lichiditate/tokens';
+import { colors } from '@/themes/platform/tokens';
+import { isEnabled } from '@/lib/modules';
 import type {
   AccountOption,
   OverviewData,
@@ -99,12 +100,12 @@ export function DashboardShell({
             label: 'OVERVIEW',
             children: <OverviewTab data={overviewData} dateLabel={dateRange.label} />,
           },
-          {
+          ...(isEnabled('performanceTab') ? [{
             key: 'performance',
             label: 'PERFORMANȚĂ',
             children: <PerformanceTab data={performanceData} dateLabel={dateRange.label} />,
-          },
-          {
+          }] : []),
+          ...(isEnabled('contentTab') ? [{
             key: 'content',
             label: 'CONȚINUT',
             children: (
@@ -114,12 +115,12 @@ export function DashboardShell({
                 accountAvgEr={overviewData.current.avgErByReach}
               />
             ),
-          },
-          {
+          }] : []),
+          ...(isEnabled('aiInsightsTab') ? [{
             key: 'ai',
             label: 'ANALIZE AI',
             children: <AiInsightsTab data={aiInsightsData} accountId={account.id} />,
-          },
+          }] : []),
         ]}
         tabBarStyle={{
           borderBottom: `1px solid ${colors.borderDefault}`,

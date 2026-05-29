@@ -3,7 +3,7 @@
 import React from 'react';
 import { Card as AntCard } from 'antd';
 import type { CardProps as AntCardProps } from 'antd';
-import { colors } from '@/themes/ai-lichiditate/tokens';
+import { colors } from '@/themes/platform/tokens';
 
 type Variant = 'default' | 'positive' | 'negative';
 

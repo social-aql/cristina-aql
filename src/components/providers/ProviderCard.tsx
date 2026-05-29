@@ -1,5 +1,5 @@
 import React from 'react';
-import { colors } from '@/themes/ai-lichiditate/tokens';
+import { colors } from '@/themes/platform/tokens';
 import { Eyebrow, Body } from '@/components/design-system/Typography';
 import type { ProviderManifest } from '@/providers/types';
 import { ConnectButton } from './ConnectButton';

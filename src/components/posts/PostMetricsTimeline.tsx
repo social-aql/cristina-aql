@@ -3,7 +3,7 @@
 import { KpiSparkline } from '@/components/dashboard/KpiSparkline';
 import { Eyebrow, Mono } from '@/components/design-system/Typography';
 import { formatKpiPercent, formatLargeNumber } from '@/lib/kpis/formatters';
-import { colors } from '@/themes/ai-lichiditate/tokens';
+import { colors } from '@/themes/platform/tokens';
 
 interface Snapshot {
   captured_at: string;

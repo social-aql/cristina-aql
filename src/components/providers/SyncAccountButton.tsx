@@ -2,7 +2,7 @@
 
 import React, { useTransition, useState } from 'react';
 import { syncAccountAction } from '@/app/dashboard/accounts/actions';
-import { colors } from '@/themes/ai-lichiditate/tokens';
+import { colors } from '@/themes/platform/tokens';
 
 interface Props {
   accountId: string;

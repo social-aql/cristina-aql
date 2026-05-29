@@ -1,11 +1,11 @@
-import { aiLichiditateTheme } from '@/themes/ai-lichiditate';
+import { platformTheme } from '@/themes/platform';
 
 export const themes = {
-  'ai-lichiditate': aiLichiditateTheme,
+  platform: platformTheme,
 } as const;
 
 export type ThemeId = keyof typeof themes;
 
-export const activeThemeId: ThemeId = 'ai-lichiditate';
+export const activeThemeId: ThemeId = 'platform';
 
 export const activeTheme = themes[activeThemeId];

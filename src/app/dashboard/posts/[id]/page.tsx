@@ -2,7 +2,7 @@ import React from 'react';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
-import { colors } from '@/themes/ai-lichiditate/tokens';
+import { colors } from '@/themes/platform/tokens';
 import { Eyebrow, H2, Body, Mono } from '@/components/design-system/Typography';
 import { Card } from '@/components/design-system/Card';
 import { Tag } from '@/components/design-system/Tag';
@@ -12,6 +12,7 @@ import { formatLargeNumber } from '@/lib/kpis/formatters';
 import { extractHook, classifyHookType, classifyCaptionLength, countCaptionWords, detectSaveCta } from '@/lib/content-analysis/caption-utils';
 import { runPostDiagnostics } from '@/lib/diagnostics/post-diagnostics';
 import { PostDiagnosticChecklist } from '@/components/posts/PostDiagnosticChecklist';
+import { isEnabled } from '@/lib/modules';
 import type { PostDiagnosticInput } from '@/lib/diagnostics/post-diagnostics';
 
 const THEME_LABELS: Record<string, string> = {
@@ -233,7 +234,7 @@ export default async function PostDetailPage({
       </Card>
 
       {/* Section 4: Diagnostic Checklist */}
-      <PostDiagnosticChecklist result={diagnosticResult} />
+      {isEnabled('postDiagnosticChecklist') && <PostDiagnosticChecklist result={diagnosticResult} />}
 
       {/* Footer nav */}
       <div>

@@ -2,7 +2,7 @@ import React from 'react';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
-import { colors } from '@/themes/ai-lichiditate/tokens';
+import { colors } from '@/themes/platform/tokens';
 import { Eyebrow, H2, Mono } from '@/components/design-system/Typography';
 import { Tag } from '@/components/design-system/Tag';
 import { formatKpiPercent, formatLargeNumber } from '@/lib/kpis/formatters';

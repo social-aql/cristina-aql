@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { colors } from '@/themes/ai-lichiditate/tokens';
+import { colors } from '@/themes/platform/tokens';
 import { Mono, Eyebrow } from '@/components/design-system/Typography';
 import type { AnalysisType, WeeklySummaryOutput, ContentPatternsOutput, ContentIdeationOutput } from '@/ai/analyses/types';
 

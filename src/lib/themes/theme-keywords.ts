@@ -177,3 +177,9 @@ export const THEMES: readonly Theme[] = [
 ];
 
 export const FALLBACK_THEME = 'other' as const;
+
+import forkConfig from '../../../fork-config';
+
+export const ACTIVE_THEMES = THEMES.filter(
+  (t) => forkConfig.contentNiche.themes.includes(t.id)
+);

@@ -1,8 +1,11 @@
 import 'server-only';
 import { metaInstagramProvider } from '@/providers/meta-instagram';
+import { isEnabled } from '@/lib/modules';
 import type { ProviderClient } from '@/providers/types';
 
-const providers: ProviderClient[] = [metaInstagramProvider];
+const providers: ProviderClient[] = [
+  ...(isEnabled('metaInstagram') ? [metaInstagramProvider] : []),
+];
 
 const clientById = new Map<string, ProviderClient>(
   providers.map((p) => [p.manifest.id, p])

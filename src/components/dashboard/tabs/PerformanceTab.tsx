@@ -3,7 +3,7 @@
 import React from 'react';
 import { MiniChart } from '@/components/dashboard/MiniChart';
 import { Eyebrow, Body, Mono } from '@/components/design-system/Typography';
-import { colors } from '@/themes/ai-lichiditate/tokens';
+import { colors } from '@/themes/platform/tokens';
 import { formatKpiPercent } from '@/lib/kpis/formatters';
 
 // ─── Types ────────────────────────────────────────────────────────────────────

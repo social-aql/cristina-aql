@@ -3,8 +3,9 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { colors } from '@/themes/ai-lichiditate/tokens';
+import { colors } from '@/themes/platform/tokens';
 import { signOut } from '@/app/dashboard/actions';
+import { appConfig } from '@/config/app.config';
 
 const NAV_ITEMS = [
   { href: '/dashboard', label: 'Dashboard' },
@@ -52,7 +53,7 @@ export function Sidebar({ userEmail }: SidebarProps) {
             color: colors.textPrimary,
           }}
         >
-          AI LICHIDITATE_aql
+          {appConfig.name}
         </span>
       </div>
 

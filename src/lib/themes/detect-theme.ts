@@ -1,4 +1,4 @@
-import { THEMES, FALLBACK_THEME } from './theme-keywords';
+import { ACTIVE_THEMES, FALLBACK_THEME } from './theme-keywords';
 import { classifyThemeWithAi } from './classify-with-ai';
 import type { ThemeDetectionResult, ThemeId, ThemeConfidence } from './types';
 
@@ -16,7 +16,7 @@ export function detectThemeByKeywords(input: DetectInput): ThemeDetectionResult 
   let bestMatches: string[] = [];
   let bestCount = 0;
 
-  for (const theme of THEMES) {
+  for (const theme of ACTIVE_THEMES) {
     const matched: string[] = [];
     for (const keyword of theme.keywords) {
       const normKw = normalizeForMatch(keyword);

@@ -2,9 +2,10 @@ import { redirect } from 'next/navigation';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import React from 'react';
 import Link from 'next/link';
-import { colors } from '@/themes/ai-lichiditate/tokens';
+import { colors } from '@/themes/platform/tokens';
 import { Eyebrow, H1, Body } from '@/components/design-system/Typography';
 import { Button } from '@/components/design-system/Button';
+import { appConfig } from '@/config/app.config';
 
 export default async function Home() {
   const supabase = await createSupabaseServerClient();
@@ -33,7 +34,7 @@ export default async function Home() {
           width: '100%',
         }}
       >
-        <Eyebrow>AI LICHIDITATE_aql · BETA</Eyebrow>
+        <Eyebrow>{appConfig.name} · BETA</Eyebrow>
         <H1 accent={{ text: 'MATTERS', tone: 'lime' }}>
           THE ANALYSIS THAT MATTERS.
         </H1>
@@ -68,7 +69,7 @@ export default async function Home() {
             letterSpacing: '0.05em',
           }}
         >
-          @ailichiditate
+          {appConfig.handle}
         </span>
         <span
           style={{

@@ -3,7 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { RunAnalysisButton } from '@/components/analyses/RunAnalysisButton';
-import { colors } from '@/themes/ai-lichiditate/tokens';
+import { colors } from '@/themes/platform/tokens';
 import { formatRelativeTime } from '@/lib/kpis/formatters';
 
 // ─── Types ─────────────────────────────────────────────────────────────────────

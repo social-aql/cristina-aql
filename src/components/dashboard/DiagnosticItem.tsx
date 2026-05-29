@@ -1,7 +1,7 @@
 import React from 'react';
 import Link from 'next/link';
 import type { DiagnosticFlag } from '@/lib/dashboard/data';
-import { colors } from '@/themes/ai-lichiditate/tokens';
+import { colors } from '@/themes/platform/tokens';
 
 interface DiagnosticItemProps {
   flag: DiagnosticFlag;

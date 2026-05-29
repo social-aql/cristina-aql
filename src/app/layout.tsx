@@ -26,9 +26,11 @@ const jetbrainsMono = JetBrains_Mono({
   display: 'swap',
 });
 
+import forkConfig from '../../fork-config';
+
 export const metadata: Metadata = {
-  title: 'AI LICHIDITATE',
-  description: 'Smart money positioning for content.',
+  title: forkConfig.app.name,
+  description: forkConfig.app.tagline,
 };
 
 export default function RootLayout({

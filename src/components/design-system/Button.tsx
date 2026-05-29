@@ -3,7 +3,7 @@
 import React from 'react';
 import { Button as AntButton } from 'antd';
 import type { ButtonProps as AntButtonProps } from 'antd';
-import { colors } from '@/themes/ai-lichiditate/tokens';
+import { colors } from '@/themes/platform/tokens';
 
 type Variant = 'primary' | 'secondary' | 'ghost' | 'danger';
 

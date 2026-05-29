@@ -3,7 +3,7 @@
 import React, { useState, useTransition } from 'react';
 import { Mono } from '@/components/design-system/Typography';
 import { Button } from '@/components/design-system/Button';
-import { colors } from '@/themes/ai-lichiditate/tokens';
+import { colors } from '@/themes/platform/tokens';
 import { backfillThemesAction } from '@/app/dashboard/settings/actions';
 
 interface Props {

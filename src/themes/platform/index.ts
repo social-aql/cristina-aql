@@ -4,9 +4,9 @@ import { antdTheme } from './antdTheme';
 export { colors, spacing, typography };
 export { antdTheme };
 
-export const aiLichiditateTheme = {
-  id: 'ai-lichiditate' as const,
-  displayName: 'AI Lichiditate_aql',
+export const platformTheme = {
+  id: 'platform' as const,
+  displayName: 'Platform',
   tokens: { colors, spacing, typography },
   antdTheme,
   cssVariables: buildCssVariables(colors),

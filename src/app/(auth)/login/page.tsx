@@ -3,9 +3,10 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
-import { colors } from '@/themes/ai-lichiditate/tokens';
+import { colors } from '@/themes/platform/tokens';
 import { Eyebrow, H1, Body, Mono } from '@/components/design-system/Typography';
 import { Button } from '@/components/design-system/Button';
+import { appConfig } from '@/config/app.config';
 
 type Mode = 'signin' | 'signup' | 'magic';
 
@@ -96,7 +97,7 @@ export default function LoginPage() {
       <div style={{ width: '100%', maxWidth: 400, display: 'flex', flexDirection: 'column', gap: 32 }}>
         {/* Header */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <Eyebrow>AI LICHIDITATE_aql · ACCESS</Eyebrow>
+          <Eyebrow>{appConfig.name} · ACCESS</Eyebrow>
           <H1 accent={{ text: 'AQL', tone: 'lime' }}>INTRĂ ÎN AQL.</H1>
         </div>
 

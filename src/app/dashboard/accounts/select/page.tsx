@@ -5,7 +5,7 @@ import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { buildTokenForPage } from '@/providers/meta-instagram/oauth';
 import { encryptJson } from '@/lib/crypto';
 import { Eyebrow, H2, Mono } from '@/components/design-system/Typography';
-import { colors } from '@/themes/ai-lichiditate/tokens';
+import { colors } from '@/themes/platform/tokens';
 
 interface AccountOption {
   externalId: string;

@@ -6,7 +6,7 @@ import { kpiTierColor } from '@/lib/kpis/benchmarks';
 import { Card } from '@/components/design-system/Card';
 import { Eyebrow, Mono } from '@/components/design-system/Typography';
 import { KpiSparkline } from './KpiSparkline';
-import { colors } from '@/themes/ai-lichiditate/tokens';
+import { colors } from '@/themes/platform/tokens';
 
 interface KpiCardProps {
   label: string;

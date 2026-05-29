@@ -1,7 +1,7 @@
 import React from 'react';
 import type { PostDiagnosticResult } from '@/lib/diagnostics/types';
 import { DiagnosticChecklistItem } from './DiagnosticChecklistItem';
-import { colors } from '@/themes/ai-lichiditate/tokens';
+import { colors } from '@/themes/platform/tokens';
 
 interface Props {
   result: PostDiagnosticResult;

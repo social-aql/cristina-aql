@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { Eyebrow, H1 } from '@/components/design-system/Typography';
-import { colors } from '@/themes/ai-lichiditate/tokens';
+import { colors } from '@/themes/platform/tokens';
 
 interface PageHeaderProps {
   eyebrow: string;

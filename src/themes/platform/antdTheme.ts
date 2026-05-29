@@ -1,5 +1,6 @@
 import { theme } from 'antd';
 import type { ThemeConfig } from 'antd';
+import forkConfig from '../../../fork-config';
 import { colors } from './tokens';
 
 export const antdTheme: ThemeConfig = {
@@ -14,9 +15,9 @@ export const antdTheme: ThemeConfig = {
     colorError: colors.accentCoral,
     colorSuccess: colors.accentLime,
     colorWarning: colors.accentCoral,
-    borderRadius: 6,
-    borderRadiusLG: 6,
-    borderRadiusSM: 4,
+    borderRadius: forkConfig.theme.borderRadius,
+    borderRadiusLG: forkConfig.theme.borderRadius,
+    borderRadiusSM: forkConfig.theme.borderRadiusSm,
     boxShadow: 'none',
     boxShadowSecondary: 'none',
     boxShadowTertiary: 'none',

@@ -21,7 +21,8 @@ import {
 import { KpiCard } from '@/components/dashboard/KpiCard';
 import { DiagnosticItem } from '@/components/dashboard/DiagnosticItem';
 import { Eyebrow } from '@/components/design-system/Typography';
-import { colors } from '@/themes/ai-lichiditate/tokens';
+import { colors } from '@/themes/platform/tokens';
+import { isEnabled } from '@/lib/modules';
 
 interface OverviewTabProps {
   data: OverviewData;
@@ -221,7 +222,7 @@ export function OverviewTab({ data, dateLabel }: OverviewTabProps) {
       </div>
 
       {/* ── Section 2: Diagnostics ───────────────────────────────────── */}
-      <div
+      {isEnabled('diagnosticFlags') && <div
         style={{
           background: colors.bgCard,
           border: `1px solid ${colors.borderDefault}`,
@@ -271,7 +272,7 @@ export function OverviewTab({ data, dateLabel }: OverviewTabProps) {
             <DiagnosticItem key={flag.id} flag={flag} />
           ))}
         </div>
-      </div>
+      </div>}
 
       {/* ── Section 3: Top Performers ────────────────────────────────── */}
       <div>

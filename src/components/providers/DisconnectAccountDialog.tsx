@@ -5,7 +5,7 @@ import { Modal, Input } from 'antd';
 import { disconnectAccountAction } from '@/app/dashboard/accounts/actions';
 import { Eyebrow, H3, Body, Mono } from '@/components/design-system/Typography';
 import { Button } from '@/components/design-system/Button';
-import { colors } from '@/themes/ai-lichiditate/tokens';
+import { colors } from '@/themes/platform/tokens';
 
 interface Props {
   open: boolean;

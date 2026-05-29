@@ -2,7 +2,7 @@
 
 import { Select } from 'antd';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { colors } from '@/themes/ai-lichiditate/tokens';
+import { colors } from '@/themes/platform/tokens';
 import { AccountOption } from '@/lib/dashboard/data';
 
 interface AccountSelectorProps {

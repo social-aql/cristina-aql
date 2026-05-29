@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { Card } from '@/components/design-system/Card';
 import { Eyebrow, Mono } from '@/components/design-system/Typography';
 import { formatKpiPercent, formatLargeNumber } from '@/lib/kpis/formatters';
-import { colors } from '@/themes/ai-lichiditate/tokens';
+import { colors } from '@/themes/platform/tokens';
 
 export interface TopPost {
   id: string;

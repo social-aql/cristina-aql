@@ -9,7 +9,7 @@ import {
 import { Collapse } from 'antd';
 import { DiagnosticItem } from '@/components/dashboard/DiagnosticItem';
 import { Eyebrow, Body, Mono } from '@/components/design-system/Typography';
-import { colors } from '@/themes/ai-lichiditate/tokens';
+import { colors } from '@/themes/platform/tokens';
 import { formatKpiPercent } from '@/lib/kpis/formatters';
 import type { ContentData, DiagnosticFlag, PostSummary } from '@/lib/dashboard/data';
 

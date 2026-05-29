@@ -3,7 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import ReactMarkdown from 'react-markdown';
-import { colors } from '@/themes/ai-lichiditate/tokens';
+import { colors } from '@/themes/platform/tokens';
 import { Eyebrow, H2, H3, Body, Mono } from '@/components/design-system/Typography';
 import { Card } from '@/components/design-system/Card';
 import type {

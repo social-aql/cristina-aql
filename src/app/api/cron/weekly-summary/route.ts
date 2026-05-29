@@ -2,11 +2,16 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createSupabaseServiceClient } from '@/lib/supabase/server';
 import { runAnalysis } from '@/ai/analyses/runner';
 import { env } from '@/lib/env';
+import { isEnabled } from '@/lib/modules';
 
 // Vercel Cron: Wednesday 16:00 UTC = 19:00 EEST (summer) / 18:00 EET (winter)
 // Schedule: "0 16 * * 3"
 // Authorization: Vercel sends "Authorization: Bearer <CRON_SECRET>" automatically.
 export async function GET(request: NextRequest) {
+  if (!isEnabled('weeklySummary')) {
+    return NextResponse.json({ message: 'Weekly summary module disabled' }, { status: 200 });
+  }
+
   const authHeader = request.headers.get('authorization');
   if (!env.CRON_SECRET || authHeader !== `Bearer ${env.CRON_SECRET}`) {
     return NextResponse.json({ error: 'unauthorized' }, { status: 401 });

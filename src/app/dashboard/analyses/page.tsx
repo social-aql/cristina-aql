@@ -3,30 +3,37 @@ import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { Eyebrow, H1, Body, Mono } from '@/components/design-system/Typography';
 import { RunAnalysisButton } from '@/components/analyses/RunAnalysisButton';
 import { AnalysisCard } from '@/components/analyses/AnalysisCard';
-import { colors } from '@/themes/ai-lichiditate/tokens';
+import { colors } from '@/themes/platform/tokens';
+import { isEnabled } from '@/lib/modules';
 import type { AnalysisType } from '@/ai/analyses/types';
 
-const ANALYSIS_TYPES: Array<{
+const ALL_ANALYSIS_TYPES: Array<{
   id: AnalysisType;
+  moduleKey: 'weeklySummary' | 'contentPatterns' | 'contentIdeation';
   displayName: string;
   description: string;
 }> = [
   {
     id: 'weekly_summary',
+    moduleKey: 'weeklySummary',
     displayName: 'SUMAR SĂPTĂMÂNAL',
     description: 'Ce a funcționat această săptămână, comparație cu săptămâna precedentă, 3 recomandări concrete.',
   },
   {
     id: 'content_patterns',
+    moduleKey: 'contentPatterns',
     displayName: 'TIPARE DE CONȚINUT',
     description: 'Ce caracteristici au postările de top: timing, format, temă, lungime caption, hashtag-uri.',
   },
   {
     id: 'content_ideation',
+    moduleKey: 'contentIdeation',
     displayName: 'IDEI DE CONȚINUT',
     description: 'Sugestii noi de postări cu hook-uri în română, bazate pe ce a performat cel mai bine.',
   },
 ];
+
+const ANALYSIS_TYPES = ALL_ANALYSIS_TYPES.filter((t) => isEnabled(t.moduleKey));
 
 export default async function AnalysesPage() {
   const supabase = await createSupabaseServerClient();

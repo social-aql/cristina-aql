@@ -1,7 +1,8 @@
 'use client';
 
 import React from 'react';
-import { colors } from '@/themes/ai-lichiditate/tokens';
+import { colors } from '@/themes/platform/tokens';
+import { appConfig } from '@/config/app.config';
 import {
   Eyebrow, H1, H2, H3, Body, Mono,
 } from '@/components/design-system/Typography';
@@ -38,7 +39,7 @@ export default function DesignSystem() {
     >
       {/* Page Header */}
       <div style={{ marginBottom: 80 }}>
-        <Eyebrow>AI LICHIDITATE · COMPONENTS</Eyebrow>
+        <Eyebrow>{appConfig.name} · COMPONENTS</Eyebrow>
         <div style={{ marginTop: 8 }}>
           <H1>DESIGN SYSTEM</H1>
         </div>

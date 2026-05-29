@@ -2,7 +2,7 @@
 
 import React, { useTransition, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { colors } from '@/themes/ai-lichiditate/tokens';
+import { colors } from '@/themes/platform/tokens';
 import { runAnalysisAction } from '@/app/dashboard/analyses/actions';
 import type { AnalysisType } from '@/ai/analyses/types';
 

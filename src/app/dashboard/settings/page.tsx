@@ -2,10 +2,12 @@ import React from 'react';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { activeThemeId } from '@/config/theme.config';
 import { Eyebrow, H2, Mono } from '@/components/design-system/Typography';
-import { colors } from '@/themes/ai-lichiditate/tokens';
+import { colors } from '@/themes/platform/tokens';
 import { aiProviders } from '@/ai/registry';
 import { aiConfig } from '@/config/ai.config';
 import { BackfillThemesSection } from '@/components/dashboard/BackfillThemesSection';
+import forkConfig from '../../../../fork-config';
+import { appConfig } from '@/config/app.config';
 
 export default async function SettingsPage() {
   const supabase = await createSupabaseServerClient();
@@ -129,6 +131,63 @@ export default async function SettingsPage() {
           totalPosts={totalPosts ?? 0}
           classifiedPosts={classifiedPosts ?? 0}
         />
+      </div>
+
+      <div>
+        <div style={{ marginTop: 32, marginBottom: 16 }}>
+          <H2>CONFIGURAȚIE FORK</H2>
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {[
+            { label: 'APP NAME', value: appConfig.name },
+            { label: 'HANDLE', value: appConfig.handle },
+            { label: 'LOCALE', value: appConfig.locale },
+            { label: 'AI PROVIDER', value: `${forkConfig.ai.provider} / ${forkConfig.ai.model}` },
+            { label: 'MODULES ACTIVE', value: `${Object.values(forkConfig.modules).filter(Boolean).length} / ${Object.keys(forkConfig.modules).length}` },
+            { label: 'TEME CONȚINUT', value: forkConfig.contentNiche.themes.join(', ') },
+          ].map(({ label, value }) => (
+            <div
+              key={label}
+              style={{
+                background: colors.bgCard,
+                border: `1px solid ${colors.borderDefault}`,
+                borderRadius: 6,
+                padding: '12px 20px',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                gap: 16,
+              }}
+            >
+              <Mono tone="muted">{label}</Mono>
+              <span style={{ textAlign: 'right', wordBreak: 'break-word', maxWidth: 320 }}><Mono>{value}</Mono></span>
+            </div>
+          ))}
+        </div>
+
+        <div style={{ marginTop: 16, display: 'flex', gap: 8 }}>
+          {[
+            { bg: forkConfig.theme.accentPrimary, title: 'Accent Primary' },
+            { bg: forkConfig.theme.accentSecondary, title: 'Accent Secondary' },
+            { bg: forkConfig.theme.bgCard, title: 'Card Background', border: forkConfig.theme.borderDefault },
+            { bg: forkConfig.theme.textPrimary, title: 'Text Primary' },
+          ].map(({ bg, title, border }) => (
+            <div
+              key={title}
+              title={title}
+              style={{
+                width: 32,
+                height: 32,
+                background: bg,
+                border: border ? `1px solid ${border}` : undefined,
+                borderRadius: 4,
+              }}
+            />
+          ))}
+        </div>
+        <div style={{ marginTop: 8 }}>
+          <span style={{ fontSize: 11 }}><Mono tone="muted">Culorile se actualizează automat din fork-config.ts</Mono></span>
+        </div>
       </div>
     </div>
   );

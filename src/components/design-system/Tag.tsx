@@ -3,7 +3,7 @@
 import React from 'react';
 import { Tag as AntTag } from 'antd';
 import type { TagProps as AntTagProps } from 'antd';
-import { colors } from '@/themes/ai-lichiditate/tokens';
+import { colors } from '@/themes/platform/tokens';
 
 type Variant = 'lime' | 'coral' | 'muted';
 

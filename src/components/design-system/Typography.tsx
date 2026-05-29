@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { colors } from '@/themes/ai-lichiditate/tokens';
+import { colors } from '@/themes/platform/tokens';
 
 interface EyebrowProps {
   children: React.ReactNode;
