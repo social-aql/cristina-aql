@@ -75,18 +75,21 @@ export default async function PostsPage({
   const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
   const sortCol = params.sort ?? 'published_at';
   const sortAsc = params.dir === 'asc';
+  const idFilter = params.ids?.split(',').filter(Boolean) ?? [];
 
   let query = supabase
     .from('posts_with_latest_metrics')
     .select('*')
     .in('account_id', accountIds)
-    .gte('published_at', since)
     .limit(200);
+
+  if (idFilter.length === 0) {
+    query = query.gte('published_at', since);
+  }
 
   if (params.theme) query = query.eq('theme', params.theme);
   if (params.type) query = query.eq('media_type', params.type.toLowerCase());
 
-  const idFilter = params.ids?.split(',').filter(Boolean) ?? [];
   if (idFilter.length > 0) {
     query = query.in('id', idFilter);
   }
