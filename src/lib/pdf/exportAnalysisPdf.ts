@@ -125,7 +125,7 @@ function bigHeadline(s: S, txt: string) {
 function bodyText(s: S, txt: string) {
   s.doc.setFont('helvetica', 'normal');
   s.doc.setFontSize(8.5);
-  setTxt(s.doc, C.textSecondary);
+  setTxt(s.doc, C.textPrimary);
   const lines = s.doc.splitTextToSize(san(txt), CW_SAFE) as string[];
   for (const line of lines) {
     guard(s, 5.5);
@@ -136,12 +136,15 @@ function bodyText(s: S, txt: string) {
 }
 
 function monoText(s: S, txt: string, color: RGB = C.textMuted, size = 8) {
-  guard(s, 6);
   s.doc.setFont('courier', 'normal');
   s.doc.setFontSize(size);
   setTxt(s.doc, color);
-  s.doc.text(san(txt), MARGIN, s.y);
-  s.y += 5.5;
+  const lines = s.doc.splitTextToSize(san(txt), CW_SAFE) as string[];
+  for (const line of lines) {
+    guard(s, 6);
+    s.doc.text(line, MARGIN, s.y);
+    s.y += 5.5;
+  }
 }
 
 function hr(s: S) {
