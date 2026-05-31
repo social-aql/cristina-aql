@@ -43,7 +43,7 @@ export async function transcribeVideo(
   try {
     const response = await fetch(videoUrl, {
       headers: { 'User-Agent': 'Mozilla/5.0' },
-      signal: AbortSignal.timeout(30_000),
+      signal: AbortSignal.timeout(60_000),
     });
     if (!response.ok) {
       throw new Error(`Video download failed: HTTP ${response.status}`);
@@ -147,7 +147,7 @@ async function transcribeViaFileApi(videoBytes: Buffer): Promise<Response> {
   }
 
   const uploadJson = await uploadResponse.json() as {
-    file?: { uri?: string };
+    file?: { uri?: string; name?: string };
   };
   const fileUri = uploadJson.file?.uri;
   if (!fileUri) {
@@ -155,6 +155,24 @@ async function transcribeViaFileApi(videoBytes: Buffer): Promise<Response> {
   }
 
   console.log(`[transcribe] File API upload success: ${fileUri}`);
+
+  // Poll until file is ACTIVE (processing can take several seconds for videos)
+  const fileName = uploadJson.file?.name;
+  if (fileName) {
+    for (let attempt = 0; attempt < 10; attempt++) {
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+      const statusResponse = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/${fileName}?key=${env.GOOGLE_GENERATIVE_AI_API_KEY}`
+      );
+      if (statusResponse.ok) {
+        const statusJson = await statusResponse.json() as { state?: string };
+        if (statusJson.state === 'ACTIVE') break;
+        if (statusJson.state === 'FAILED') {
+          throw new Error('File API processing failed');
+        }
+      }
+    }
+  }
 
   return fetch(
     `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${env.GOOGLE_GENERATIVE_AI_API_KEY}`,
