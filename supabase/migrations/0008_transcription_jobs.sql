@@ -34,8 +34,10 @@ alter table public.posts
   add column if not exists transcript_model text,
   add column if not exists transcript_at timestamptz;
 
--- Recreate view with new transcript columns (preserves all existing columns)
-create or replace view public.posts_with_latest_metrics as
+-- Recreate view with new transcript columns
+-- DROP + CREATE required because CREATE OR REPLACE cannot reorder existing columns
+drop view if exists public.posts_with_latest_metrics;
+create view public.posts_with_latest_metrics as
 select
   p.id,
   p.account_id,
