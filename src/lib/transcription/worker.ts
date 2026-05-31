@@ -1,5 +1,5 @@
 import 'server-only';
-import { createSupabaseServerClient } from '@/lib/supabase/server';
+import { createSupabaseServiceClient } from '@/lib/supabase/server';
 import { transcribeVideo } from './gemini-transcribe';
 
 const BATCH_SIZE = 3;
@@ -13,7 +13,7 @@ export interface WorkerResult {
 }
 
 export async function runTranscriptionWorker(): Promise<WorkerResult> {
-  const supabase = await createSupabaseServerClient();
+  const supabase = createSupabaseServiceClient();
 
   const result: WorkerResult = {
     processed: 0,
