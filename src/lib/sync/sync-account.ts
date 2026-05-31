@@ -54,6 +54,14 @@ export async function syncAccount(
   const rangeFrom = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString();
   const range = { from: rangeFrom, to: now };
 
+  const transcriptionJobsToQueue: Array<{
+    post_id: string;
+    account_id: string;
+    media_type: string;
+    video_url: string | null;
+    status: string;
+  }> = [];
+
   let postsInserted = 0;
   let snapshotsInserted = 0;
 
@@ -155,7 +163,27 @@ export async function syncAccount(
           avg_watch_time_seconds: kpis.avgWatchTimeSeconds,
         });
         snapshotsInserted++;
+
+        if (post.mediaType === 'reel' || post.mediaType === 'video') {
+          transcriptionJobsToQueue.push({
+            post_id: upsertedPost.id,
+            account_id: accountId,
+            media_type: post.mediaType,
+            video_url: post.mediaUrl ?? null,
+            status: 'pending',
+          });
+        }
       }
+    }
+
+    if (transcriptionJobsToQueue.length > 0) {
+      await supabase
+        .from('transcription_jobs')
+        .upsert(transcriptionJobsToQueue, {
+          onConflict: 'post_id',
+          ignoreDuplicates: true,
+        });
+      console.log(`[sync] queued ${transcriptionJobsToQueue.length} transcription jobs`);
     }
 
     // 10. Update last_sync_at
