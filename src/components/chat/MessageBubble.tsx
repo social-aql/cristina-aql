@@ -89,7 +89,7 @@ export function MessageBubble({ message }: Props) {
           </>
         )}
       </div>
-      <span style={{ fontFamily: 'var(--font-jetbrains-mono)', fontSize: 10, color: 'var(--color-text-muted)', marginTop: 3, display: 'block' }}>
+      <span suppressHydrationWarning style={{ fontFamily: 'var(--font-jetbrains-mono)', fontSize: 10, color: 'var(--color-text-muted)', marginTop: 3, display: 'block' }}>
         {new Date(message.createdAt).toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit' })}
       </span>
     </div>

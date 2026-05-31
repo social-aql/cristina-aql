@@ -8,6 +8,21 @@ import forkConfig from '../../../../../fork-config';
 const GEMINI_MODEL = forkConfig.ai.chatModel;
 const MAX_TOOL_ROUNDS = 5;
 
+async function callGemini(
+  apiKey: string,
+  model: string,
+  body: object,
+): Promise<Response> {
+  return fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    }
+  );
+}
+
 export async function POST(request: NextRequest) {
   const supabase = await createSupabaseRouteHandlerClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -86,53 +101,41 @@ export async function POST(request: NextRequest) {
   const stream = new ReadableStream({
     async start(controller) {
       const encoder = new TextEncoder();
-
       const send = (data: object) => {
         controller.enqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`));
       };
 
       try {
+        // ── PASS 1: Function calling — collect account data ──────────────
         let currentContents = contents;
         let toolRound = 0;
-        let finalText = '';
+        let pass1Text = '';
         const allToolCalls: object[] = [];
         const allToolResults: object[] = [];
+        const collectedToolData: Array<{ name: string; result: unknown }> = [];
 
         while (toolRound < MAX_TOOL_ROUNDS) {
-          const geminiRes = await fetch(
-            `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${apiKey}`,
-            {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                contents: currentContents,
-                systemInstruction: { parts: [{ text: systemPrompt }] },
-                tools: [
-                  functionDeclarationsForGemini,
-                  { googleSearch: {} },
-                ],
-                generationConfig: {
-                  temperature: 0.7,
-                  maxOutputTokens: 2048,
-                },
-              }),
-            }
-          );
+          const res1 = await callGemini(apiKey, GEMINI_MODEL, {
+            contents: currentContents,
+            systemInstruction: { parts: [{ text: systemPrompt }] },
+            tools: [functionDeclarationsForGemini],
+            generationConfig: { temperature: 0.3, maxOutputTokens: 2048 },
+          });
 
-          if (!geminiRes.ok) {
-            const err = await geminiRes.text();
-            console.error('[chat] Gemini error:', err);
+          if (!res1.ok) {
+            const err = await res1.text();
+            console.error('[chat] pass1 Gemini error:', err);
             send({ type: 'error', message: 'Eroare la generarea răspunsului.' });
             controller.close();
             return;
           }
 
-          const geminiJson = await geminiRes.json() as any;
-          const candidate = geminiJson.candidates?.[0];
-          const parts = candidate?.content?.parts ?? [];
+          const json1 = await res1.json() as any;
+          const candidate1 = json1.candidates?.[0];
+          const parts1 = candidate1?.content?.parts ?? [];
 
-          const functionCalls = parts.filter((p: any) => p.functionCall);
-          const textParts = parts.filter((p: any) => p.text);
+          const functionCalls = parts1.filter((p: any) => p.functionCall);
+          const textParts1 = parts1.filter((p: any) => p.text);
 
           if (functionCalls.length > 0) {
             send({ type: 'tool_start', tools: functionCalls.map((p: any) => p.functionCall.name) });
@@ -145,23 +148,22 @@ export async function POST(request: NextRequest) {
               let result: unknown;
               try {
                 result = await executeTool(name, args, { userId: user.id, accountId });
-                console.log(`[chat] tool ${name} executed successfully`);
+                console.log(`[chat] tool ${name} ok`);
               } catch (err) {
                 result = { error: err instanceof Error ? err.message : 'Tool execution failed' };
                 console.error(`[chat] tool ${name} failed:`, err);
               }
 
               allToolResults.push({ name, result });
-              // Gemini functionResponse.response must be a plain object (Struct), not array
+              collectedToolData.push({ name, result });
+
               const responseObj = Array.isArray(result) ? { items: result } : (result as object ?? {});
-              toolResponseParts.push({
-                functionResponse: { name, response: responseObj },
-              });
+              toolResponseParts.push({ functionResponse: { name, response: responseObj } });
             }
 
             currentContents = [
               ...currentContents,
-              { role: 'model', parts },
+              { role: 'model', parts: parts1 },
               { role: 'user', parts: toolResponseParts },
             ];
 
@@ -169,30 +171,66 @@ export async function POST(request: NextRequest) {
             continue;
           }
 
-          if (textParts.length > 0) {
-            finalText = textParts.map((p: any) => p.text).join('');
-
-            // Word-by-word simulation (true streaming requires streamGenerateContent endpoint)
-            const words = finalText.split(' ');
-            for (let i = 0; i < words.length; i++) {
-              const chunk = i === 0 ? words[i] : ' ' + words[i];
-              send({ type: 'chunk', text: chunk });
-              await new Promise(r => setTimeout(r, 15));
-            }
-
-            // Extract grounding metadata (present when Gemini used Google Search)
-            const groundingMetadata = candidate?.groundingMetadata;
-            const webSources = (groundingMetadata?.groundingChunks ?? [])
-              .filter((chunk: any) => chunk.web)
-              .map((chunk: any) => ({ title: chunk.web.title, uri: chunk.web.uri }));
-            if (webSources.length > 0) {
-              send({ type: 'sources', sources: webSources });
-            }
+          // Pass 1 produced a text answer (no web search needed for this question)
+          if (textParts1.length > 0) {
+            pass1Text = textParts1.map((p: any) => p.text).join('');
           }
-
           break;
         }
 
+        // ── PASS 2: Google Search — web grounding ────────────────────────
+        // Only run if tools were called (account data was fetched).
+        // Inject the account data as context so Gemini can compare with web.
+        let finalText = pass1Text;
+        let webSources: Array<{ title: string; uri: string }> = [];
+
+        if (collectedToolData.length > 0) {
+          const accountDataContext = collectedToolData
+            .map(({ name, result }) => `[${name}]: ${JSON.stringify(result)}`)
+            .join('\n');
+
+          const pass2SystemPrompt = systemPrompt +
+            `\n\n## Date din contul utilizatorului (deja colectate)\n\n${accountDataContext}\n\nFolosește aceste date împreună cu rezultatele din Google Search pentru a da un răspuns complet și comparat.`;
+
+          const res2 = await callGemini(apiKey, GEMINI_MODEL, {
+            contents: [{ role: 'user', parts: [{ text: message }] }],
+            systemInstruction: { parts: [{ text: pass2SystemPrompt }] },
+            tools: [{ googleSearch: {} }],
+            generationConfig: { temperature: 0.7, maxOutputTokens: 2048 },
+          });
+
+          if (res2.ok) {
+            const json2 = await res2.json() as any;
+            const candidate2 = json2.candidates?.[0];
+            const textParts2 = (candidate2?.content?.parts ?? []).filter((p: any) => p.text);
+
+            if (textParts2.length > 0) {
+              finalText = textParts2.map((p: any) => p.text).join('');
+            }
+
+            const groundingMetadata = candidate2?.groundingMetadata;
+            webSources = (groundingMetadata?.groundingChunks ?? [])
+              .filter((chunk: any) => chunk.web)
+              .map((chunk: any) => ({ title: chunk.web.title, uri: chunk.web.uri }));
+          } else {
+            // Pass 2 failed — fall back to pass 1 text answer
+            console.warn('[chat] pass2 web search failed, using pass1 answer');
+          }
+        }
+
+        // Stream final text word by word
+        const words = finalText.split(' ');
+        for (let i = 0; i < words.length; i++) {
+          const chunk = i === 0 ? words[i] : ' ' + words[i];
+          send({ type: 'chunk', text: chunk });
+          await new Promise(r => setTimeout(r, 15));
+        }
+
+        if (webSources.length > 0) {
+          send({ type: 'sources', sources: webSources });
+        }
+
+        // Persist to DB
         await supabase.from('chat_messages').insert({
           conversation_id: convId,
           role: 'assistant',

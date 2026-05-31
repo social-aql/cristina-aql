@@ -122,7 +122,7 @@ export default function LoginPage() {
                   onClick={() => { setMode(m); setError(null); }}
                   style={tabStyle(mode === m)}
                 >
-                  {m === 'signin' ? 'Intră' : m === 'signup' ? 'Înregistrare' : 'Link magic'}
+                  {'Intră'}
                 </button>
               ))}
             </div>
