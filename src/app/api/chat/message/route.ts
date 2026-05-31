@@ -123,9 +123,19 @@ export async function POST(request: NextRequest) {
           });
 
           if (!res1.ok) {
-            const err = await res1.text();
-            console.error('[chat] pass1 Gemini error:', err);
-            send({ type: 'error', message: 'Eroare la generarea răspunsului.' });
+            const errText = await res1.text();
+            console.error('[chat] pass1 Gemini error:', errText);
+            let userMessage = 'Eroare la generarea răspunsului.';
+            try {
+              const errJson = JSON.parse(errText);
+              const status = errJson?.error?.status;
+              if (status === 'UNAVAILABLE' || res1.status === 503) {
+                userMessage = 'Serviciul AI este temporar suprasolicitat. Încearcă din nou în câteva secunde.';
+              } else if (status === 'RESOURCE_EXHAUSTED' || res1.status === 429) {
+                userMessage = 'Limita de utilizare a fost atinsă. Încearcă din nou mai târziu.';
+              }
+            } catch {}
+            send({ type: 'error', message: userMessage });
             controller.close();
             return;
           }
