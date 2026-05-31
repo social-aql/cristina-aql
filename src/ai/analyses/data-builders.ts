@@ -45,6 +45,11 @@ export interface PostForAnalysis {
   publishedAt: string;
   dayOfWeek: string;
   hourOfDay: number;
+  hasTranscript: boolean;
+  transcriptHook: string | null;
+  transcriptStructure: string | null;
+  transcriptKeywords: string[];
+  visualDescription: string | null;
 }
 
 function toPostForAnalysis(p: {
@@ -60,10 +65,34 @@ function toPostForAnalysis(p: {
   save_to_like_ratio?: number | null;
   published_at: string;
   hashtags?: unknown;
+  transcript?: string | null;
+  transcript_segments?: unknown;
+  visual_description?: string | null;
 }): PostForAnalysis {
   const caption = p.caption ?? '';
   const dt = new Date(p.published_at);
   const hashtags: string[] = Array.isArray(p.hashtags) ? (p.hashtags as string[]) : [];
+
+  const transcript = p.transcript ?? null;
+  const segments = (Array.isArray(p.transcript_segments) ? p.transcript_segments : []) as Array<{ start: string; end: string; text: string }>;
+
+  const transcriptHook = transcript
+    ? transcript.split(/[.!?]/).filter(Boolean).slice(0, 2).join('. ').trim() + '.'
+    : null;
+
+  const transcriptStructure = segments.length > 0
+    ? segments.map((s) => `${s.start}-${s.end}: "${s.text.slice(0, 60)}"`).join(' | ')
+    : null;
+
+  const financialKeywords = [
+    'FED', 'BCE', 'inflație', 'dobândă', 'PIB', 'S&P', 'NASDAQ',
+    'bitcoin', 'crypto', 'aur', 'dolar', 'lichiditate',
+  ];
+  const transcriptLower = (transcript ?? '').toLowerCase();
+  const transcriptKeywords = financialKeywords.filter((k) =>
+    transcriptLower.includes(k.toLowerCase())
+  );
+
   return {
     postId: p.id,
     caption: caption.slice(0, 200),
@@ -87,6 +116,11 @@ function toPostForAnalysis(p: {
     publishedAt: p.published_at,
     dayOfWeek: DAYS[dt.getDay()],
     hourOfDay: dt.getHours(),
+    hasTranscript: !!transcript,
+    transcriptHook,
+    transcriptStructure,
+    transcriptKeywords,
+    visualDescription: p.visual_description ?? null,
   };
 }
 
@@ -140,7 +174,7 @@ export async function buildWeeklyData(
     supabase
       .from('posts_with_latest_metrics')
       .select(
-        'id, caption, media_type, theme, theme_secondary, er_by_reach, saves_per_reach, sends_per_reach, reach, save_to_like_ratio, published_at, hashtags'
+        'id, caption, media_type, theme, theme_secondary, er_by_reach, saves_per_reach, sends_per_reach, reach, save_to_like_ratio, published_at, hashtags, transcript, transcript_segments, visual_description'
       )
       .eq('account_id', accountId)
       .gte('published_at', period1Start.toISOString())
@@ -261,7 +295,7 @@ export async function buildPatternsData(
   const { data: raw } = await supabase
     .from('posts_with_latest_metrics')
     .select(
-      'id, caption, media_type, theme, theme_secondary, er_by_reach, saves_per_reach, sends_per_reach, reach, save_to_like_ratio, published_at, hashtags'
+      'id, caption, media_type, theme, theme_secondary, er_by_reach, saves_per_reach, sends_per_reach, reach, save_to_like_ratio, published_at, hashtags, transcript, transcript_segments, visual_description'
     )
     .eq('account_id', accountId)
     .gte('published_at', since.toISOString())

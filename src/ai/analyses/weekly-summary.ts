@@ -168,7 +168,11 @@ export function buildWeeklySummaryPrompt(data: WeeklyDataBundle): string {
      Publicat: ${p.dayOfWeek} ora ${p.hourOfDay}:00
      ER: ${fmt(p.erByReach)} | Save Rate: ${fmt(p.savesPerReach)} | Send Rate: ${fmt(p.sendsPerReach)} | Reach: ${p.reach ?? 'N/A'}
      Save-to-Like: ${p.saveToLikeRatio != null ? p.saveToLikeRatio.toFixed(3) : 'N/A'}
-     Caption preview: "${sanitize((p.caption ?? '').slice(0, 150))}"`;
+     Caption preview: "${sanitize((p.caption ?? '').slice(0, 150))}"
+     ${p.hasTranscript ? `Hook verbal (din video): "${p.transcriptHook ?? ''}"` : 'Transcript video: indisponibil'}
+     ${p.transcriptStructure ? `Structură video: ${p.transcriptStructure}` : ''}
+     ${p.visualDescription ? `Descriere vizuală: ${p.visualDescription.slice(0, 150)}` : ''}
+     ${p.transcriptKeywords.length > 0 ? `Cuvinte cheie video: ${p.transcriptKeywords.join(', ')}` : ''}`;
 
   const sortedByEr = [...data.currentPeriod.posts]
     .filter((p) => p.erByReach != null && p.erByReach > 0)
