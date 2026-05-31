@@ -12,8 +12,10 @@ import { formatLargeNumber } from '@/lib/kpis/formatters';
 import { extractHook, classifyHookType, classifyCaptionLength, countCaptionWords, detectSaveCta } from '@/lib/content-analysis/caption-utils';
 import { runPostDiagnostics } from '@/lib/diagnostics/post-diagnostics';
 import { PostDiagnosticChecklist } from '@/components/posts/PostDiagnosticChecklist';
+import { TranscriptSection } from '@/components/posts/TranscriptSection';
 import { isEnabled } from '@/lib/modules';
 import type { PostDiagnosticInput } from '@/lib/diagnostics/post-diagnostics';
+import type { TranscriptionSegment } from '@/lib/transcription/types';
 
 const THEME_LABELS: Record<string, string> = {
   fed: 'FED · Politică Monetară',
@@ -131,6 +133,12 @@ export default async function PostDetailPage({
 
   const diagnosticResult = runPostDiagnostics(diagnosticInput);
 
+  const { data: transcriptionJob } = await supabase
+    .from('transcription_jobs')
+    .select('status')
+    .eq('post_id', post.id)
+    .maybeSingle();
+
   const themeLabel = post.theme ? THEME_LABELS[post.theme] ?? post.theme.toUpperCase() : null;
   const themeTagVariant = post.theme_confidence === 'high' ? 'lime' : 'muted';
 
@@ -235,6 +243,16 @@ export default async function PostDetailPage({
 
       {/* Section 4: Diagnostic Checklist */}
       {isEnabled('postDiagnosticChecklist') && <PostDiagnosticChecklist result={diagnosticResult} />}
+
+      {/* Section 5: Transcript */}
+      <TranscriptSection
+        transcript={(p.transcript as string | null) ?? null}
+        segments={(p.transcript_segments as TranscriptionSegment[]) ?? null}
+        visualDescription={(p.visual_description as string | null) ?? null}
+        transcriptAt={(p.transcript_at as string | null) ?? null}
+        model={(p.transcript_model as string | null) ?? null}
+        jobStatus={transcriptionJob?.status ?? null}
+      />
 
       {/* Footer nav */}
       <div>
