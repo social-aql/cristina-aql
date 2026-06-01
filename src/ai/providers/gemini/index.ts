@@ -29,15 +29,17 @@ export const geminiProvider: AiProvider = {
 
     const genAI = new GoogleGenerativeAI(env.GOOGLE_GENERATIVE_AI_API_KEY);
     const generationConfig: Record<string, unknown> = {
-      maxOutputTokens: input.maxTokens ?? 2048,
+      maxOutputTokens: input.maxTokens ?? input.maxOutputTokens ?? 2048,
       temperature: input.temperature ?? 0.6,
     };
-    if (input.jsonMode) {
+    // Google Search grounding is incompatible with JSON mode / responseSchema
+    const useSearch = input.useGoogleSearch ?? false;
+    if (!useSearch && input.jsonMode) {
       generationConfig.responseMimeType = 'application/json';
       // Disable thinking: it consumes the shared maxOutputTokens budget and truncates JSON output
       generationConfig.thinkingConfig = { thinkingBudget: 0 };
     }
-    if (input.responseSchema) {
+    if (!useSearch && input.responseSchema) {
       generationConfig.responseMimeType = 'application/json';
       generationConfig.responseSchema = input.responseSchema;
       console.log('[gemini] using responseSchema:', JSON.stringify(input.responseSchema).slice(0, 300));
@@ -67,8 +69,16 @@ export const geminiProvider: AiProvider = {
         return { role, parts };
       });
 
+    const generateParams = useSearch
+      ? ({ contents, tools: [{ googleSearch: {} }] } as unknown as Parameters<typeof model.generateContent>[0])
+      : { contents };
+
+    if (useSearch) {
+      console.log('[gemini] google search grounding enabled');
+    }
+
     try {
-      const result = await model.generateContent({ contents });
+      const result = await model.generateContent(generateParams);
       const text = result.response.text();
       const usage = result.response.usageMetadata;
       const finishReason = result.response.candidates?.[0]?.finishReason;
@@ -83,12 +93,20 @@ export const geminiProvider: AiProvider = {
       }
 
       let parsed: unknown;
-      if (input.jsonMode) {
+      if (input.jsonMode || useSearch) {
+        // When using google search, model outputs text — try to extract JSON block
+        const jsonText = useSearch
+          ? (text.match(/```json\n?([\s\S]*?)\n?```/)?.[1] ?? text.match(/(\{[\s\S]*\})/)?.[1] ?? text)
+          : text;
         try {
-          parsed = JSON.parse(text);
+          parsed = JSON.parse(jsonText);
         } catch {
-          console.error('[gemini] JSON parse failed. text.length:', text.length, '| last 300 chars:', text.slice(-300));
-          throw new AiProviderError(`Gemini returned invalid JSON: ${text.slice(0, 200)}`, { retryable: false, rateLimited: false });
+          if (!useSearch) {
+            console.error('[gemini] JSON parse failed. text.length:', text.length, '| last 300 chars:', text.slice(-300));
+            throw new AiProviderError(`Gemini returned invalid JSON: ${text.slice(0, 200)}`, { retryable: false, rateLimited: false });
+          }
+          // When grounding, JSON parse failure is non-fatal — parsed stays undefined
+          console.warn('[gemini] google search response not JSON-parseable, returning raw text');
         }
       }
 
@@ -114,6 +132,11 @@ export const geminiProvider: AiProvider = {
       if (isAuth) {
         console.error('[gemini] auth error:', msg);
         throw new AiProviderError(`Gemini auth failed (check API key): ${msg}`, { retryable: false, rateLimited: false });
+      }
+      const isTransient = msg.includes('503') || msg.includes('502') || msg.toLowerCase().includes('service unavailable') || msg.toLowerCase().includes('overloaded');
+      if (isTransient) {
+        console.warn('[gemini] transient error:', msg);
+        throw new AiProviderError(`Gemini error: ${msg}`, { retryable: true, rateLimited: false });
       }
       console.error('[gemini] error:', msg);
       throw new AiProviderError(`Gemini error: ${msg}`, { retryable: false, rateLimited: false });

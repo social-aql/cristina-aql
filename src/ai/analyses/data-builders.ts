@@ -2,6 +2,8 @@ import 'server-only';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { extractHook, classifyHookType, classifyCaptionLength, countCaptionWords, detectSaveCta } from '@/lib/content-analysis/caption-utils';
 import type { HookType } from '@/lib/content-analysis/caption-utils';
+import { computeTranscriptMetrics } from '@/lib/transcription/transcript-metrics';
+import type { TranscriptionSegment } from '@/lib/transcription/types';
 
 // Exclude null AND zero for rate metrics (0 = data unavailable from Meta, not actual zero)
 function safeAvg(values: Array<number | null>): number | null {
@@ -50,6 +52,17 @@ export interface PostForAnalysis {
   transcriptStructure: string | null;
   transcriptKeywords: string[];
   visualDescription: string | null;
+  transcriptMetrics: {
+    wordCount: number | null;
+    wordsPerMinute: number | null;
+    hookType: string | null;
+    hookScore: number | null;
+    hookText: string | null;
+    ctaType: string | null;
+    ctaScore: number | null;
+    rhythmQuality: string | null;
+    overallScore: number | null;
+  } | null;
 }
 
 function toPostForAnalysis(p: {
@@ -93,6 +106,10 @@ function toPostForAnalysis(p: {
     transcriptLower.includes(k.toLowerCase())
   );
 
+  const tMetrics = (transcript && segments.length > 0)
+    ? computeTranscriptMetrics(transcript, segments as TranscriptionSegment[], p.visual_description ?? null)
+    : null;
+
   return {
     postId: p.id,
     caption: caption.slice(0, 200),
@@ -121,6 +138,17 @@ function toPostForAnalysis(p: {
     transcriptStructure,
     transcriptKeywords,
     visualDescription: p.visual_description ?? null,
+    transcriptMetrics: tMetrics ? {
+      wordCount: tMetrics.wordCount,
+      wordsPerMinute: tMetrics.wordsPerMinute,
+      hookType: tMetrics.hookType,
+      hookScore: tMetrics.hookScore,
+      hookText: tMetrics.hookText,
+      ctaType: tMetrics.ctaType,
+      ctaScore: tMetrics.ctaScore,
+      rhythmQuality: tMetrics.rhythmQuality,
+      overallScore: tMetrics.overallScore,
+    } : null,
   };
 }
 
@@ -151,6 +179,10 @@ export interface WeeklyDataBundle {
     avgSaves: number | null;
     avgSends: number | null;
   }>;
+  agentContext: {
+    recentNews: string[];
+    upcomingEvents: string[];
+  } | null;
 }
 
 export async function buildWeeklyData(
@@ -263,6 +295,27 @@ export async function buildWeeklyData(
       avgSaves: safeAvg(saves),
       avgSends: safeAvg(sends),
     })),
+    agentContext: await (async () => {
+      const { data: latestAgentInsight } = await supabase
+        .from('agent_insights')
+        .select('industry_news, upcoming_events')
+        .eq('user_id', userId)
+        .order('run_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (!latestAgentInsight) return null;
+      type NewsItem = { title: string; summary: string; relevance: string };
+      type EventItem = { event: string; dateDescription: string; urgency: string };
+      return {
+        recentNews: ((latestAgentInsight.industry_news as NewsItem[]) ?? [])
+          .filter(n => n.relevance === 'high')
+          .slice(0, 3)
+          .map(n => `${n.title}: ${n.summary}`),
+        upcomingEvents: ((latestAgentInsight.upcoming_events as EventItem[]) ?? [])
+          .filter(e => e.urgency !== 'watch')
+          .map(e => `${e.event} (${e.dateDescription})`),
+      };
+    })(),
   };
 }
 

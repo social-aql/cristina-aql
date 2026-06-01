@@ -14,6 +14,8 @@ const envSchema = z.object({
   META_APP_SECRET: z.string().optional(),
   META_GRAPH_API_VERSION: z.string().optional(),
   META_REDIRECT_URI: z.string().optional(),
+  RESEND_API_KEY: z.string().min(1).optional(),
+  ADMIN_EMAIL: z.string().email().optional(),
 });
 
 export const env = envSchema.parse({
@@ -30,4 +32,6 @@ export const env = envSchema.parse({
   META_APP_SECRET: process.env.META_APP_SECRET,
   META_GRAPH_API_VERSION: process.env.META_GRAPH_API_VERSION,
   META_REDIRECT_URI: process.env.META_REDIRECT_URI,
+  RESEND_API_KEY: process.env.RESEND_API_KEY,
+  ADMIN_EMAIL: process.env.ADMIN_EMAIL,
 });

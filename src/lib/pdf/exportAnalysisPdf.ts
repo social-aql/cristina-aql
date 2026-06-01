@@ -39,6 +39,7 @@ const TYPE_LABELS: Record<AnalysisType, string> = {
   weekly_summary:   'SUMAR SAPTAMANAL',
   content_patterns: 'TIPARE CONTINUT',
   content_ideation: 'IDEI CONTINUT',
+  post_critique:    'CRITICA POST',
 };
 
 // ——— Sanitize: strip Romanian diacritics + non-Latin1 chars for built-in PDF fonts ———

@@ -3,7 +3,8 @@ import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { colors } from '@/themes/platform/tokens';
-import { Eyebrow, H1, Body } from '@/components/design-system/Typography';
+import { Eyebrow, H1, Body, Mono } from '@/components/design-system';
+import type { ContentOpportunity } from '@/lib/agent/types';
 import { Button } from '@/components/design-system/Button';
 import { DataRow } from '@/components/design-system/DataRow';
 import {
@@ -164,27 +165,83 @@ export default async function DashboardPage({ searchParams }: Props) {
     return <EmptyStateNoPosts account={activeAccount} />;
   }
 
-  const [overviewData, performanceData, contentData, aiInsightsData] = await Promise.all([
+  const [overviewData, performanceData, contentData, aiInsightsData, agentResult] = await Promise.all([
     fetchOverviewData(dashParams),
     fetchPerformanceData(dashParams),
     fetchContentData(dashParams),
     fetchAiInsightsData(dashParams),
+    supabase
+      .from('agent_insights')
+      .select('run_type, run_at, opportunities')
+      .eq('user_id', user.id)
+      .order('run_at', { ascending: false })
+      .limit(1)
+      .maybeSingle(),
   ]);
+
+  const latestInsight = agentResult.data;
 
   const dateLabel = params.from && params.to
     ? `${params.from} → ${params.to}`
     : `Ultimele ${rangeDays} zile`;
 
   return (
-    <DashboardShell
-      account={activeAccount}
-      allAccounts={accounts}
-      dateRange={{ from: dashParams.from, to: dashParams.to, label: dateLabel }}
-      overviewData={overviewData}
-      performanceData={performanceData}
-      contentData={contentData}
-      aiInsightsData={aiInsightsData}
-      defaultTab={params.tab ?? 'overview'}
-    />
+    <>
+      {latestInsight && (
+        <div style={{
+          marginBottom: 16,
+          padding: '12px 16px',
+          background: colors.bgElevated,
+          border: `1px solid ${colors.borderDefault}`,
+          borderRadius: 6,
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+        }}>
+          <div>
+            <Eyebrow tone="muted">AGENT · ULTIMUL BRIEFING</Eyebrow>
+            <div style={{ marginTop: 4 }}>
+              <Body>
+                {(latestInsight.opportunities as ContentOpportunity[])?.[0]?.title ?? 'Nicio oportunitate detectată'}
+              </Body>
+            </div>
+            <div style={{ marginTop: 2 }}>
+              <Mono tone="muted">
+                {new Date(latestInsight.run_at).toLocaleDateString('ro-RO', {
+                  weekday: 'short', day: 'numeric', month: 'short'
+                })}
+              </Mono>
+            </div>
+          </div>
+          <Link
+            href="/dashboard/agent"
+            style={{
+              padding: '8px 16px',
+              background: 'transparent',
+              border: `1px solid ${colors.borderDefault}`,
+              borderRadius: 6,
+              color: colors.textSecondary,
+              textDecoration: 'none',
+              fontFamily: 'var(--font-jetbrains-mono)',
+              fontSize: 11,
+              textTransform: 'uppercase',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            → TOATE BRIEFING-URILE
+          </Link>
+        </div>
+      )}
+      <DashboardShell
+        account={activeAccount}
+        allAccounts={accounts}
+        dateRange={{ from: dashParams.from, to: dashParams.to, label: dateLabel }}
+        overviewData={overviewData}
+        performanceData={performanceData}
+        contentData={contentData}
+        aiInsightsData={aiInsightsData}
+        defaultTab={params.tab ?? 'overview'}
+      />
+    </>
   );
 }

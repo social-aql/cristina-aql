@@ -27,6 +27,20 @@ export default async function AnalysisDetailPage({
 
   if (!analysis) notFound();
 
+  // For post_critique, fetch post data for context
+  let postData: { id: string; caption: string | null; permalink: string | null } | null = null;
+  if (analysis.analysis_type === 'post_critique' && analysis.structured_output) {
+    const postId = (analysis.structured_output as Record<string, unknown>).postId as string | undefined;
+    if (postId) {
+      const { data: post } = await supabase
+        .from('posts_with_latest_metrics')
+        .select('id, caption, permalink')
+        .eq('id', postId)
+        .maybeSingle();
+      postData = post ?? null;
+    }
+  }
+
   if (analysis.status === 'failed') {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
@@ -66,6 +80,7 @@ export default async function AnalysisDetailPage({
         rangeTo={analysis.input_range_to?.slice(0, 10) ?? null}
         model={analysis.model}
         durationMs={analysis.duration_ms}
+        postData={postData}
       />
     </div>
   );

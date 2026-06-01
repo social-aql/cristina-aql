@@ -39,6 +39,12 @@ Explică concret CE diferă între ele (hookType, lungime, CTA, timing, structur
 - Save-to-like ratio pe temă: care teme sunt percepute ca "referință" vs "știre"?
 - Postările cu implicație directă pentru portofoliu ("ce înseamnă pentru banii tăi") vs postările explicative pure: diferență de engagement?
 
+### TRANSCRIPT PATTERNS (pentru Reels cu transcript disponibil)
+- Există corelație între hookType și ER? (contradiction/number > statement/platitude?)
+- WPM optim pe audiența ta: care viteză de vorbire are ER mai bun?
+- CTA save vs follow: care generează mai multe saves?
+- Există video-uri cu hook slab dar ER bun? Dacă da, ce compensează?
+
 ## FORMAT RĂSPUNS
 
 **patterns:** Fiecare pattern include:

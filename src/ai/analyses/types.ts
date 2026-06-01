@@ -1,4 +1,4 @@
-export type AnalysisType = 'weekly_summary' | 'content_patterns' | 'content_ideation';
+export type AnalysisType = 'weekly_summary' | 'content_patterns' | 'content_ideation' | 'post_critique';
 
 export interface AnalysisMetadata {
   id: string;

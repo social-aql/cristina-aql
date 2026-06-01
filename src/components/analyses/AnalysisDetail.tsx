@@ -16,6 +16,28 @@ import type {
   Recommendation,
   PostRef,
 } from '@/ai/analyses/types';
+import type { TranscriptMetrics } from '@/lib/transcription/transcript-metrics-types';
+import { TranscriptMetricsCard } from '@/components/posts/TranscriptMetricsCard';
+
+// Inline types to avoid importing from server-only post-critique module
+interface CritiqueSection {
+  section: 'hook' | 'structure' | 'cta' | 'visual' | 'content';
+  label: string;
+  verdict: 'strong' | 'acceptable' | 'weak' | 'critical';
+  finding: string;
+  fix: string | null;
+  exampleFix: string | null;
+}
+interface PostCritique {
+  overallVerdict: string;
+  score: number;
+  sections: CritiqueSection[];
+  topStrengths: string[];
+  topWeaknesses: string[];
+  rewrittenHook: string;
+  rewrittenCta: string;
+  narrativeMarkdown: string;
+}
 
 function PostRefLinks({ evidence }: { evidence: PostRef[] | string | undefined }) {
   if (!evidence) return null;
@@ -57,6 +79,7 @@ const TYPE_LABELS: Record<AnalysisType, string> = {
   weekly_summary: 'SUMAR SĂPTĂMÂNAL',
   content_patterns: 'TIPARE CONȚINUT',
   content_ideation: 'IDEI CONȚINUT',
+  post_critique: 'CRITICĂ POST',
 };
 
 const PRIORITY_COLOR: Record<string, string> = {
@@ -494,6 +517,177 @@ function ContentIdeationDetail({ output }: { output: ContentIdeationOutput }) {
   );
 }
 
+// ===== Post Critique =====
+
+function PostCritiqueDetail({
+  output,
+  postData,
+}: {
+  output: PostCritique & { metrics?: TranscriptMetrics; postId?: string };
+  postData?: { id: string; caption: string | null; permalink: string | null } | null;
+}) {
+  const verdictColor = (verdict: CritiqueSection['verdict']) => {
+    switch (verdict) {
+      case 'strong': return colors.accentLime;
+      case 'acceptable': return colors.textPrimary;
+      case 'weak': return colors.accentCoral;
+      case 'critical': return colors.accentCoral;
+    }
+  };
+
+  const verdictLabel = (verdict: CritiqueSection['verdict']) => ({
+    strong: '✓ PUTERNIC',
+    acceptable: '~ ACCEPTABIL',
+    weak: '⚠ SLAB',
+    critical: '✗ CRITIC',
+  }[verdict]);
+
+  const sectionLabels: Record<string, string> = {
+    hook: 'HOOK', structure: 'STRUCTURĂ', cta: 'CTA', visual: 'VIZUAL', content: 'CONȚINUT',
+  };
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      {/* Post context */}
+      {postData && (
+        <div style={{
+          background: colors.bgCard,
+          border: `1px solid ${colors.borderDefault}`,
+          borderRadius: 6,
+          padding: '12px 16px',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          gap: 12,
+        }}>
+          <div style={{ minWidth: 0 }}>
+            <div style={{ fontSize: 10, fontFamily: 'var(--font-jetbrains-mono), monospace', color: colors.textMuted, marginBottom: 4 }}>POST ANALIZAT</div>
+            <p style={{ fontSize: 13, color: colors.textSecondary, margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {postData.caption ? postData.caption.slice(0, 120) : '(fără caption)'}
+            </p>
+          </div>
+          <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
+            <Link href={`/dashboard/posts/${postData.id}`} style={{ fontFamily: 'var(--font-jetbrains-mono), monospace', fontSize: 11, color: colors.accentLime, textDecoration: 'none', whiteSpace: 'nowrap' }}>
+              → POSTARE
+            </Link>
+            {postData.permalink && (
+              <a href={postData.permalink} target="_blank" rel="noopener noreferrer" style={{ fontFamily: 'var(--font-jetbrains-mono), monospace', fontSize: 11, color: colors.accentLime, textDecoration: 'none', whiteSpace: 'nowrap' }}>
+                ↗ INSTAGRAM
+              </a>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Transcript metrics */}
+      {output.metrics && <TranscriptMetricsCard metrics={output.metrics} />}
+
+      {/* Overall verdict */}
+      <div style={{
+        background: colors.bgCard,
+        border: `1px solid ${colors.borderDefault}`,
+        borderRadius: 6,
+        padding: '16px 20px',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'flex-start',
+        gap: 16,
+      }}>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: 10, fontFamily: 'var(--font-jetbrains-mono), monospace', color: colors.textMuted, marginBottom: 8 }}>VERDICT GENERAL</div>
+          <p style={{ fontSize: 16, fontStyle: 'italic', margin: 0, color: colors.textPrimary }}>
+            &quot;{output.overallVerdict}&quot;
+          </p>
+        </div>
+        <span style={{
+          fontSize: 32,
+          fontWeight: 700,
+          fontFamily: 'var(--font-jetbrains-mono), monospace',
+          flexShrink: 0,
+          color: output.score >= 70 ? colors.accentLime : output.score >= 50 ? colors.textPrimary : colors.accentCoral,
+        }}>
+          {output.score}<span style={{ fontSize: 14 }}>/100</span>
+        </span>
+      </div>
+
+      {/* Sections */}
+      {output.sections?.map(section => (
+        <div
+          key={section.section}
+          style={{
+            borderLeft: `4px solid ${verdictColor(section.verdict)}`,
+            paddingLeft: 16,
+            paddingTop: 12,
+            paddingBottom: 12,
+            background: colors.bgCard,
+            borderRadius: '0 6px 6px 0',
+          }}
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+            <span style={{ fontFamily: 'var(--font-jetbrains-mono), monospace', fontSize: 12, fontWeight: 700, color: colors.textPrimary }}>
+              {sectionLabels[section.section] ?? section.section.toUpperCase()}
+            </span>
+            <span style={{ fontFamily: 'var(--font-jetbrains-mono), monospace', fontSize: 11, color: verdictColor(section.verdict) }}>
+              {verdictLabel(section.verdict)}
+            </span>
+          </div>
+          <p style={{ fontSize: 13, margin: 0, marginBottom: section.fix ? 8 : 0, color: colors.textPrimary }}>{section.finding}</p>
+          {section.fix && (
+            <div style={{ marginTop: 8 }}>
+              <div style={{ fontFamily: 'var(--font-jetbrains-mono), monospace', fontSize: 11, color: colors.accentLime, marginBottom: 4 }}>→ FIX:</div>
+              <p style={{ fontSize: 13, margin: 0, color: colors.textPrimary }}>{section.fix}</p>
+            </div>
+          )}
+          {section.exampleFix && (
+            <div style={{ marginTop: 8, padding: '8px 12px', background: colors.bgElevated, borderRadius: 4, borderLeft: `2px solid ${colors.accentLime}` }}>
+              <div style={{ fontFamily: 'var(--font-jetbrains-mono), monospace', fontSize: 10, color: colors.textMuted, marginBottom: 4 }}>EXEMPLU CONCRET:</div>
+              <p style={{ fontSize: 13, fontStyle: 'italic', margin: 0, color: colors.textPrimary }}>&quot;{section.exampleFix}&quot;</p>
+            </div>
+          )}
+        </div>
+      ))}
+
+      {/* Rewritten hook + CTA */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+        <div style={{ background: colors.bgCardPositive, border: `1px solid ${colors.borderPositive}`, borderRadius: 6, padding: '14px 16px' }}>
+          <div style={{ fontSize: 10, fontFamily: 'var(--font-jetbrains-mono), monospace', color: colors.accentLime, marginBottom: 8 }}>HOOK RESCRIS DE AI</div>
+          <p style={{ fontSize: 14, fontStyle: 'italic', margin: 0, color: colors.textPrimary }}>&quot;{output.rewrittenHook}&quot;</p>
+        </div>
+        <div style={{ background: colors.bgCardPositive, border: `1px solid ${colors.borderPositive}`, borderRadius: 6, padding: '14px 16px' }}>
+          <div style={{ fontSize: 10, fontFamily: 'var(--font-jetbrains-mono), monospace', color: colors.accentLime, marginBottom: 8 }}>CTA RESCRIS DE AI</div>
+          <p style={{ fontSize: 14, fontStyle: 'italic', margin: 0, color: colors.textPrimary }}>&quot;{output.rewrittenCta}&quot;</p>
+        </div>
+      </div>
+
+      {/* Strengths + weaknesses */}
+      {(output.topStrengths?.length > 0 || output.topWeaknesses?.length > 0) && (
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          {output.topStrengths?.length > 0 && (
+            <div style={{ background: colors.bgCard, border: `1px solid ${colors.borderDefault}`, borderRadius: 6, padding: '14px 16px' }}>
+              <div style={{ fontSize: 10, fontFamily: 'var(--font-jetbrains-mono), monospace', color: colors.accentLime, marginBottom: 8 }}>CE MERGE BINE</div>
+              {output.topStrengths.map((s, i) => <p key={i} style={{ fontSize: 13, marginBottom: 6, marginTop: 0, color: colors.textPrimary }}>✓ {s}</p>)}
+            </div>
+          )}
+          {output.topWeaknesses?.length > 0 && (
+            <div style={{ background: colors.bgCardNegative, border: `1px solid ${colors.borderNegative}`, borderRadius: 6, padding: '14px 16px' }}>
+              <div style={{ fontSize: 10, fontFamily: 'var(--font-jetbrains-mono), monospace', color: colors.accentCoral, marginBottom: 8 }}>DE SCHIMBAT URGENT</div>
+              {output.topWeaknesses.map((w, i) => <p key={i} style={{ fontSize: 13, marginBottom: 6, marginTop: 0, color: colors.accentCoral }}>✗ {w}</p>)}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Full narrative */}
+      {output.narrativeMarkdown && (
+        <div style={{ background: colors.bgCard, border: `1px solid ${colors.borderDefault}`, borderRadius: 6, padding: '16px 20px' }}>
+          <div style={{ fontSize: 10, fontFamily: 'var(--font-jetbrains-mono), monospace', color: colors.textMuted, marginBottom: 12 }}>ANALIZĂ COMPLETĂ</div>
+          <NarrativeMarkdown text={output.narrativeMarkdown} />
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ===== Main export =====
 
 interface Props {
@@ -504,9 +698,10 @@ interface Props {
   rangeTo: string | null;
   model: string;
   durationMs: number | null;
+  postData?: { id: string; caption: string | null; permalink: string | null } | null;
 }
 
-export function AnalysisDetail({ analysisType, structuredOutput, createdAt, rangeFrom, rangeTo, model, durationMs }: Props) {
+export function AnalysisDetail({ analysisType, structuredOutput, createdAt, rangeFrom, rangeTo, model, durationMs, postData }: Props) {
   const output = structuredOutput as WeeklySummaryOutput & ContentPatternsOutput & ContentIdeationOutput;
 
   const [exporting, setExporting] = useState(false);
@@ -519,14 +714,11 @@ export function AnalysisDetail({ analysisType, structuredOutput, createdAt, rang
     }, 0);
   }
 
-  const relTime = (() => {
-    const diff = Date.now() - new Date(createdAt).getTime();
-    const mins = Math.floor(diff / 60_000);
-    if (mins < 1) return 'acum';
-    if (mins < 60) return `acum ${mins} min`;
-    const hrs = Math.floor(mins / 60);
-    if (hrs < 24) return `acum ${hrs}h`;
-    return `acum ${Math.floor(hrs / 24)} zile`;
+  const formattedDate = (() => {
+    const d = new Date(createdAt);
+    const date = d.toLocaleDateString('ro-RO', { day: '2-digit', month: 'short', year: 'numeric' });
+    const time = d.toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit' });
+    return `${date} · ${time}`;
   })();
 
   return (
@@ -535,7 +727,7 @@ export function AnalysisDetail({ analysisType, structuredOutput, createdAt, rang
       <div>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <Eyebrow>
-            {TYPE_LABELS[analysisType] ?? analysisType} · {model} · {relTime}
+            {TYPE_LABELS[analysisType] ?? analysisType} · {model} · <span suppressHydrationWarning>{formattedDate}</span>
             {durationMs && ` · ${(durationMs / 1000).toFixed(1)}s`}
           </Eyebrow>
           <button
@@ -595,6 +787,12 @@ export function AnalysisDetail({ analysisType, structuredOutput, createdAt, rang
       )}
       {analysisType === 'content_ideation' && (
         <ContentIdeationDetail output={output as ContentIdeationOutput} />
+      )}
+      {analysisType === 'post_critique' && (
+        <PostCritiqueDetail
+          output={output as unknown as PostCritique & { metrics?: TranscriptMetrics; postId?: string }}
+          postData={postData}
+        />
       )}
     </div>
   );

@@ -14,8 +14,13 @@ import { runPostDiagnostics } from '@/lib/diagnostics/post-diagnostics';
 import { PostDiagnosticChecklist } from '@/components/posts/PostDiagnosticChecklist';
 import { TranscriptSection } from '@/components/posts/TranscriptSection';
 import { isEnabled } from '@/lib/modules';
+import { isAdmin } from '@/lib/roles';
+import { computeTranscriptMetrics } from '@/lib/transcription/transcript-metrics';
+import { PostCritiqueSection } from '@/components/posts/PostCritiqueSection';
 import type { PostDiagnosticInput } from '@/lib/diagnostics/post-diagnostics';
 import type { TranscriptionSegment } from '@/lib/transcription/types';
+import type { TranscriptMetrics } from '@/lib/transcription/transcript-metrics-types';
+import type { PostCritique } from '@/lib/transcription/post-critique';
 
 const THEME_LABELS: Record<string, string> = {
   fed: 'FED · Politică Monetară',
@@ -139,6 +144,32 @@ export default async function PostDetailPage({
     .eq('post_id', post.id)
     .maybeSingle();
 
+  // Compute transcript metrics if transcript available
+  let transcriptMetrics: TranscriptMetrics | null = null;
+  if (post.transcript && post.transcript_segments) {
+    transcriptMetrics = computeTranscriptMetrics(
+      post.transcript,
+      post.transcript_segments as TranscriptionSegment[],
+      (p.visual_description as string | null) ?? null,
+    );
+  }
+
+  // Fetch existing AI critique
+  const { data: existingCritiqueRow } = await supabase
+    .from('ai_analyses')
+    .select('structured_output')
+    .eq('analysis_type', 'post_critique')
+    .contains('structured_output', { postId: post.id })
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  const critiqueData = existingCritiqueRow?.structured_output
+    ? (existingCritiqueRow.structured_output as unknown as PostCritique)
+    : null;
+
+  const adminStatus = await isAdmin();
+
   const themeLabel = post.theme ? THEME_LABELS[post.theme] ?? post.theme.toUpperCase() : null;
   const themeTagVariant = post.theme_confidence === 'high' ? 'lime' : 'muted';
 
@@ -253,6 +284,16 @@ export default async function PostDetailPage({
         model={(p.transcript_model as string | null) ?? null}
         jobStatus={transcriptionJob?.status ?? null}
       />
+
+      {/* Section 6: AI Critique */}
+      {(post.transcript || transcriptMetrics) && (
+        <PostCritiqueSection
+          postId={post.id}
+          existingCritique={critiqueData}
+          existingMetrics={transcriptMetrics}
+          isAdmin={adminStatus}
+        />
+      )}
 
       {/* Footer nav */}
       <div>

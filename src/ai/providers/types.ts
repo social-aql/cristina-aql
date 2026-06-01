@@ -19,6 +19,8 @@ export interface AiGenerateInput {
   temperature?: number;
   jsonMode?: boolean;
   responseSchema?: object;
+  useGoogleSearch?: boolean;
+  maxOutputTokens?: number;
 }
 
 export interface AiGenerateOutput {

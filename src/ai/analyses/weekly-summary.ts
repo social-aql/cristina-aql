@@ -169,7 +169,8 @@ export function buildWeeklySummaryPrompt(data: WeeklyDataBundle): string {
      ER: ${fmt(p.erByReach)} | Save Rate: ${fmt(p.savesPerReach)} | Send Rate: ${fmt(p.sendsPerReach)} | Reach: ${p.reach ?? 'N/A'}
      Save-to-Like: ${p.saveToLikeRatio != null ? p.saveToLikeRatio.toFixed(3) : 'N/A'}
      Caption preview: "${sanitize((p.caption ?? '').slice(0, 150))}"
-     ${p.hasTranscript ? `Hook verbal (din video): "${p.transcriptHook ?? ''}"` : 'Transcript video: indisponibil'}
+     ${p.transcriptMetrics ? `Metrici transcript: WPM=${p.transcriptMetrics.wordsPerMinute}, Hook=${p.transcriptMetrics.hookType}(${p.transcriptMetrics.hookScore}/100), CTA=${p.transcriptMetrics.ctaType}(${p.transcriptMetrics.ctaScore}/100), Ritm=${p.transcriptMetrics.rhythmQuality}, Score=${p.transcriptMetrics.overallScore}/100
+     Hook verbal: "${p.transcriptMetrics.hookText}"` : p.hasTranscript ? `Hook verbal (din video): "${p.transcriptHook ?? ''}"` : 'Transcript video: indisponibil'}
      ${p.transcriptStructure ? `Structură video: ${p.transcriptStructure}` : ''}
      ${p.visualDescription ? `Descriere vizuală: ${p.visualDescription.slice(0, 150)}` : ''}
      ${p.transcriptKeywords.length > 0 ? `Cuvinte cheie video: ${p.transcriptKeywords.join(', ')}` : ''}`;
@@ -219,5 +220,11 @@ ${bottom3.length > 0 ? bottom3.map(formatPost).join('\n\n') : '  (insuficiente d
 
 === CHECKLIST DE VERIFICAT ===
 Parcurge sistematic fiecare item din checklist-ul din system prompt și raportează orice problemă detectată în postările de mai sus.
-Ancorează fiecare problemă în cel puțin un post concret (folosind ID-ul).`;
+Ancorează fiecare problemă în cel puțin un post concret (folosind ID-ul).${data.agentContext ? `
+
+=== CONTEXT PIEȚE (din ultima monitorizare agent) ===
+Știri relevante:
+${data.agentContext.recentNews.map(n => `• ${n}`).join('\n')}${data.agentContext.upcomingEvents.length > 0 ? `
+Evenimente programate:
+${data.agentContext.upcomingEvents.map(e => `• ${e}`).join('\n')}` : ''}` : ''}`;
 }

@@ -88,8 +88,8 @@ export async function runAnalysis(params: {
         });
         break;
       } catch (err) {
-        if (err instanceof AiProviderError && err.rateLimited && attempt < 2) {
-          console.warn(`[analysis runner] rate limited, retrying in ${delay}ms (attempt ${attempt + 1})`);
+        if (err instanceof AiProviderError && (err.rateLimited || err.retryable) && attempt < 2) {
+          console.warn(`[analysis runner] transient error, retrying in ${delay}ms (attempt ${attempt + 1})`);
           await new Promise((r) => setTimeout(r, delay));
           delay *= 3;
           continue;
