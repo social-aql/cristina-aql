@@ -26,7 +26,8 @@ export async function runTranscriptionWorker(): Promise<WorkerResult> {
   const { data: jobs, error: fetchError } = await supabase
     .from('transcription_jobs')
     .select('id, post_id, account_id, status, attempts, max_attempts, video_url, media_type')
-    .or('status.eq.pending,and(status.eq.failed,attempts.lt.max_attempts)')
+    .or('status.eq.pending,status.eq.failed')
+    .lt('attempts', 3)
     .order('created_at', { ascending: true })
     .limit(BATCH_SIZE);
 
