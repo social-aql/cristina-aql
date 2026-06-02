@@ -23,9 +23,9 @@ const config: ForkConfig = {
   // APP IDENTITY
   // ===================================================================
   app: {
-    name: 'AI LICHIDITATE',
-    tagline: 'Smart money positioning for content.',
-    handle: '@ailichiditate',
+    name: 'CRISTINA_aql',
+    tagline: 'Smart travel friendly content.',
+    handle: '@cristina.cicedea',
     locale: 'ro',
     defaultDateRangeDays: 30,
   },
@@ -37,23 +37,23 @@ const config: ForkConfig = {
   // accentSecondary: negative signals, warnings, errors (currently coral)
   // ===================================================================
   theme: {
-    bgBase: '#000000',
-    bgElevated: '#0F0F0F',
-    bgCard: '#141414',
-    bgCardPositive: '#0E1A06',
-    bgCardNegative: '#1A0908',
+    bgBase: '#fff3e7',
+    bgElevated: '#f0f0f0',
+    bgCard: '#f4f4f4',
+    bgCardPositive: '#fff6d0',
+    bgCardNegative: '#03265b',
 
-    textPrimary: '#F2EFE4',
-    textSecondary: '#8A8A8A',
+    textPrimary: '#d2a062',
+    textSecondary: '#181818',
     textMuted: '#5A5A5A',
 
-    accentPrimary: '#C7F84C',
-    accentPrimaryDim: '#7A9A2E',
+    accentPrimary: '#ff8066',
+    accentPrimaryDim: '#ac5645',
     accentSecondary: '#FF5A4E',
     accentSecondaryDim: '#8C2F28',
 
     borderDefault: '#262626',
-    borderPositive: '#3A5C0F',
+    borderPositive: '#b6b096',
     borderNegative: '#5C1F1A',
 
     fontDisplay: 'League Spartan',
@@ -99,12 +99,10 @@ const config: ForkConfig = {
   // CONTENT THEMES
   // ===================================================================
   contentNiche: {
-    label: 'Finanțe & Economie',
-    description: 'Creator de conținut financiar și economic în limba română.',
+    label: 'Travel & Lifestyle',
+    description: 'Creator de conținut travel si lifestyle limba română.',
     themes: [
-      'fed', 'crypto', 'stocks_us', 'gold', 'forex',
-      'real_estate', 'economy_eu', 'macro',
-      'education', 'investing_principles', 'trading_strategy', 'emerging_markets',
+      'travel', 'lifestyle', 'stays', 'guides', 'motivational',
     ],
   },
 };
