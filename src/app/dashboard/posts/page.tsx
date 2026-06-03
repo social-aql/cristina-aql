@@ -7,22 +7,9 @@ import { Eyebrow, H2, Mono } from '@/components/design-system/Typography';
 import { Tag } from '@/components/design-system/Tag';
 import { PostCaptionLink } from '@/components/dashboard/PostCaptionLink';
 import { formatKpiPercent, formatLargeNumber } from '@/lib/kpis/formatters';
+import forkConfig from '../../../../fork-config';
 
-const THEME_LABELS: Record<string, string> = {
-  fed: 'FED',
-  crypto: 'CRYPTO',
-  stocks_us: 'STOCKS US',
-  gold: 'AUR',
-  forex: 'FOREX',
-  real_estate: 'IMOBILIARE',
-  economy_eu: 'EU',
-  macro: 'MACRO',
-  education: 'EDUCAȚIE',
-  investing_principles: 'PRINCIPII',
-  trading_strategy: 'STRATEGIE',
-  emerging_markets: 'EM',
-  other: 'OTHER',
-};
+const THEME_LABELS = forkConfig.contentNiche.themeLabels;
 
 const DATE_RANGES: Record<string, number | null> = {
   '7': 7,
