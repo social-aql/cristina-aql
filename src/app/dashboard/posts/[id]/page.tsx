@@ -23,18 +23,9 @@ import type { TranscriptMetrics } from '@/lib/transcription/transcript-metrics-t
 import type { PostCritique } from '@/lib/transcription/post-critique';
 import { analyzeRetention } from '@/lib/retention/retention-analyzer';
 import { RetentionDiagnosticCard } from '@/components/posts/RetentionDiagnosticCard';
+import forkConfig from '../../../../../fork-config';
 
-const THEME_LABELS: Record<string, string> = {
-  fed: 'FED · Politică Monetară',
-  crypto: 'Crypto · Digital Assets',
-  stocks_us: 'Acțiuni SUA · Wall Street',
-  gold: 'Aur · Metale Prețioase',
-  forex: 'Forex · Valute',
-  real_estate: 'Imobiliare · Locuințe',
-  economy_eu: 'Economie UE · BCE',
-  macro: 'Macro · Economia Globală',
-  other: 'Other',
-};
+const THEME_LABELS = forkConfig.contentNiche.themeLabelsVerbose;
 
 export default async function PostDetailPage({
   params,
