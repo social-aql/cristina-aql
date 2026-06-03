@@ -24,11 +24,14 @@ const THEME_LABELS: Record<string, string> = {
   other: 'OTHER',
 };
 
-const DATE_RANGES: Record<string, number> = {
+const DATE_RANGES: Record<string, number | null> = {
   '7': 7,
   '30': 30,
   '90': 90,
+  'all': null,
 };
+
+const PAGE_SIZE = 20;
 
 interface SearchParams {
   theme?: string;
@@ -37,6 +40,7 @@ interface SearchParams {
   sort?: string;
   dir?: string;
   ids?: string;
+  page?: string;
 }
 
 export default async function PostsPage({
@@ -72,34 +76,57 @@ export default async function PostsPage({
     return renderGlobalEmpty('NICIUN POST SINCRONIZAT. MERGI LA CONTURI ȘI SINCRONIZEAZĂ.');
   }
 
-  const days = DATE_RANGES[params.days ?? '30'] ?? 30;
-  const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
+  const daysKey = params.days ?? '30';
+  const daysValue = daysKey in DATE_RANGES ? DATE_RANGES[daysKey] : 30;
+  const since = daysValue != null
+    ? new Date(Date.now() - daysValue * 24 * 60 * 60 * 1000).toISOString()
+    : null;
   const sortCol = params.sort ?? 'published_at';
   const sortAsc = params.dir === 'asc';
   const idFilter = params.ids?.split(',').filter(Boolean) ?? [];
-
-  let query = supabase
-    .from('posts_with_latest_metrics')
-    .select('*')
-    .in('account_id', accountIds)
-    .limit(200);
-
-  if (idFilter.length === 0) {
-    query = query.gte('published_at', since);
-  }
-
-  if (params.theme) query = query.eq('theme', params.theme);
-  if (params.type) query = query.eq('media_type', params.type.toLowerCase());
-
-  if (idFilter.length > 0) {
-    query = query.in('id', idFilter);
-  }
+  const page = Math.max(1, parseInt(params.page ?? '1', 10));
 
   const validSortCols = ['published_at', 'er_by_reach', 'saves_per_reach', 'sends_per_reach', 'reach'];
   const col = validSortCols.includes(sortCol) ? sortCol : 'published_at';
-  query = query.order(col, { ascending: sortAsc, nullsFirst: false });
 
-  const { data: posts } = await query;
+  let countQuery = supabase
+    .from('posts_with_latest_metrics')
+    .select('id', { count: 'exact', head: true })
+    .in('account_id', accountIds);
+
+  let dataQuery = supabase
+    .from('posts_with_latest_metrics')
+    .select('*')
+    .in('account_id', accountIds);
+
+  if (idFilter.length > 0) {
+    countQuery = countQuery.in('id', idFilter);
+    dataQuery = dataQuery.in('id', idFilter);
+  } else if (since) {
+    countQuery = countQuery.gte('published_at', since);
+    dataQuery = dataQuery.gte('published_at', since);
+  }
+
+  if (params.theme) {
+    countQuery = countQuery.eq('theme', params.theme);
+    dataQuery = dataQuery.eq('theme', params.theme);
+  }
+  if (params.type) {
+    countQuery = countQuery.eq('media_type', params.type.toLowerCase());
+    dataQuery = dataQuery.eq('media_type', params.type.toLowerCase());
+  }
+
+  dataQuery = dataQuery
+    .order(col, { ascending: sortAsc, nullsFirst: false })
+    .range((page - 1) * PAGE_SIZE, page * PAGE_SIZE - 1);
+
+  const [{ count: filteredCount }, { data: posts }] = await Promise.all([
+    countQuery,
+    dataQuery,
+  ]);
+
+  const totalFiltered = filteredCount ?? 0;
+  const totalPages = Math.max(1, Math.ceil(totalFiltered / PAGE_SIZE));
 
   // Fetch transcription status for posts
   const postIds = (posts ?? []).map(p => p.id);
@@ -116,6 +143,12 @@ export default async function PostsPage({
 
   const hasActiveFilters = !!(params.theme || params.type || (params.days && params.days !== '30') || params.ids);
   const hasFilteredPosts = (posts?.length ?? 0) > 0;
+
+  function pageLink(p: number) {
+    const sp = new URLSearchParams(params as Record<string, string>);
+    sp.set('page', String(p));
+    return `/dashboard/posts?${sp.toString()}`;
+  }
 
   const thStyle: React.CSSProperties = {
     fontFamily: 'var(--font-jetbrains-mono), monospace',
@@ -153,6 +186,7 @@ export default async function PostsPage({
 
   function filterLink(key: string, value: string | undefined, label: string) {
     const sp = new URLSearchParams(params as Record<string, string>);
+    sp.delete('page');
     if (value === undefined || sp.get(key) === value) {
       sp.delete(key);
     } else {
@@ -180,7 +214,7 @@ export default async function PostsPage({
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
       <div>
-        <Eyebrow>POSTĂRI · {hasFilteredPosts ? posts!.length : 0}</Eyebrow>
+        <Eyebrow>POSTĂRI · {totalFiltered}</Eyebrow>
         <div style={{ marginTop: 8 }}>
           <H2>POSTĂRILE TALE</H2>
         </div>
@@ -192,6 +226,7 @@ export default async function PostsPage({
         {filterLink('days', '7', '7 ZILE')}
         {filterLink('days', '30', '30 ZILE')}
         {filterLink('days', '90', '90 ZILE')}
+        {filterLink('days', 'all', 'ALL')}
         <span style={{ width: 1, height: 16, background: colors.borderDefault, margin: '0 4px' }} />
         <Mono tone="muted">TIP:</Mono>
         {filterLink('type', 'reel', 'REEL')}
@@ -373,6 +408,46 @@ export default async function PostsPage({
           </div>
         )}
       </div>
+
+      {totalPages > 1 && (
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center', justifyContent: 'center' }}>
+          {page > 1 && (
+            <Link
+              href={pageLink(page - 1)}
+              style={{
+                fontFamily: 'var(--font-jetbrains-mono), monospace',
+                fontSize: 11,
+                padding: '4px 10px',
+                border: `1px solid ${colors.borderDefault}`,
+                borderRadius: 4,
+                color: colors.textSecondary,
+                textDecoration: 'none',
+              }}
+            >
+              ← PREV
+            </Link>
+          )}
+          <Mono tone="muted" style={{ fontSize: 11 }}>
+            {page} / {totalPages} ({totalFiltered} POSTĂRI)
+          </Mono>
+          {page < totalPages && (
+            <Link
+              href={pageLink(page + 1)}
+              style={{
+                fontFamily: 'var(--font-jetbrains-mono), monospace',
+                fontSize: 11,
+                padding: '4px 10px',
+                border: `1px solid ${colors.borderDefault}`,
+                borderRadius: 4,
+                color: colors.textSecondary,
+                textDecoration: 'none',
+              }}
+            >
+              NEXT →
+            </Link>
+          )}
+        </div>
+      )}
     </div>
   );
 }
