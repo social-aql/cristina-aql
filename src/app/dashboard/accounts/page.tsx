@@ -7,12 +7,36 @@ import { ConnectedAccountsList } from '@/components/providers/ConnectedAccountsL
 import { getCurrentUserRole } from '@/lib/roles';
 import { connectProviderAction } from './actions';
 import { colors } from '@/themes/platform/tokens';
+import { ConnectSuccessModalWrapper } from '@/components/providers/ConnectSuccessModalWrapper';
 
-export default async function AccountsPage() {
+interface Props {
+  searchParams: Promise<{ connected?: string }>;
+}
+
+export default async function AccountsPage({ searchParams }: Props) {
+  const params = await searchParams;
+  const newlyConnectedId = params.connected ?? null;
+
   const supabase = await createSupabaseServerClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
+
+  let newlyConnectedAccount: { id: string; handle: string } | null = null;
+  if (newlyConnectedId) {
+    const { data } = await supabase
+      .from('accounts')
+      .select('id, handle, display_name')
+      .eq('id', newlyConnectedId)
+      .single();
+
+    if (data) {
+      newlyConnectedAccount = {
+        id: data.id,
+        handle: data.handle ?? data.display_name,
+      };
+    }
+  }
 
   const [userProfile, { data: accounts }] = await Promise.all([
     getCurrentUserRole(),
@@ -28,6 +52,9 @@ export default async function AccountsPage() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 48 }}>
+      {newlyConnectedAccount && (
+        <ConnectSuccessModalWrapper account={newlyConnectedAccount} />
+      )}
       {/* Connected accounts */}
       <section style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
         <div>

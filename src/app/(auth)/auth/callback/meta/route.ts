@@ -4,7 +4,6 @@ import { createSupabaseRouteHandlerClient } from '@/lib/supabase/server';
 import { metaInstagramProvider } from '@/providers/meta-instagram';
 import { buildTokenForPage } from '@/providers/meta-instagram/oauth';
 import { encryptJson } from '@/lib/crypto';
-import { syncAccount } from '@/lib/sync/sync-account';
 
 const REDIRECT_URI = () =>
   process.env.META_REDIRECT_URI ??
@@ -88,26 +87,7 @@ export async function GET(request: NextRequest) {
         return response;
       }
 
-      try {
-        await syncAccount(row.id, user.id);
-      } catch (syncError) {
-        console.error('[meta callback] initial sync failed:', syncError);
-        void supabase
-          .from('accounts')
-          .update({
-            last_sync_error:
-              syncError instanceof Error ? syncError.message : String(syncError),
-            status: 'error',
-          })
-          .eq('id', row.id);
-        const response = NextResponse.redirect(
-          `${origin}/dashboard/accounts?warning=initial_sync_failed`
-        );
-        response.cookies.delete('meta_instagram_oauth_state');
-        return response;
-      }
-
-      const response = NextResponse.redirect(`${origin}/dashboard/accounts`);
+      const response = NextResponse.redirect(`${origin}/dashboard/accounts?connected=${row.id}`);
       response.cookies.delete('meta_instagram_oauth_state');
       return response;
     }
