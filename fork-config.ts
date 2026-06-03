@@ -105,26 +105,33 @@ const config: ForkConfig = {
       'travel', 'lifestyle', 'stays', 'guides', 'motivational',
     ],
     keywords: [
-      'fed', 'federal reserve', 'bce', 'fomc', 'powell', 'lagarde',
-      'dobândă', 'dobanda', 'rata dobânzii', 'rata dobanzii',
-      'inflație', 'inflatie', 'deflație', 'deflatie',
-      'pib', 'gdp', 'recesiune', 'recession',
-      'lichiditate', 'liquidity', 'spread',
-      'bitcoin', 'btc', 'ethereum', 'eth', 'crypto', 'cripto',
-      's&p', 'sp500', 'nasdaq', 'dow', 'wall street',
-      'nvidia', 'nvda', 'apple', 'aapl', 'microsoft',
-      'aur', 'xau', 'gold', 'argint', 'silver',
-      'dxy', 'dolar', 'dollar', 'eur/usd', 'forex',
-      'imobiliar', 'ipotecă', 'ipoteca', 'mortgage',
-      'obligațiuni', 'obligatiuni', 'bonds', 'yield',
-      'portofoliu', 'portfolio', 'diversificare', 'risc',
-      'bull market', 'bear market', 'bullish', 'bearish',
-      'breakout', 'rezistență', 'rezistenta', 'suport',
-      'randament', 'dividend', 'profit', 'pierdere',
-      'piețe emergente', 'piete emergente', 'emerging markets',
-      'capitalul', 'capital', 'investiție', 'investitie',
-      'tapering', 'qe', 'quantitative easing',
-      'trezorerie', 'treasury', 't-bills',
+      // travel
+      'travel', 'călătorie', 'calatorie', 'vacanță', 'vacanta', 'trip', 'journey',
+      'destinație', 'destinatie', 'zbor', 'flight', 'aeroport', 'airport',
+      'cazare', 'hotel', 'hostel', 'airbnb', 'resort', 'pensiune',
+      'bagaj', 'baggage', 'viza', 'viză', 'pașaport', 'pasaport', 'passport',
+      'city break', 'weekend', 'escapadă', 'escapada',
+      'traseu', 'itinerariu', 'itinerary', 'ghid', 'guide',
+      'munte', 'mare', 'plajă', 'plaja', 'beach', 'ocean',
+      'backpacking', 'solo travel', 'road trip',
+
+      // stays / accommodation
+      'check-in', 'check-out', 'rezervare', 'booking', 'suite',
+      'cazat', 'locuiesc', 'stau', 'cameră', 'camera', 'room',
+
+      // lifestyle
+      'lifestyle', 'rutină', 'rutina', 'routine', 'obiceiuri', 'habits',
+      'dimineață', 'dimineata', 'morning', 'wellness', 'sănătate', 'sanatate',
+      'fitness', 'mindset', 'productivitate', 'productivity',
+      'echilibru', 'balance', 'fericire', 'happiness',
+      'fashion', 'outfit', 'stil', 'style',
+      'cafea', 'coffee', 'restaurant', 'food', 'mâncare', 'mancare',
+
+      // motivational
+      'motivație', 'motivatie', 'motivation', 'inspirație', 'inspiratie', 'inspiration',
+      'succes', 'success', 'vis', 'dream', 'obiectiv', 'goal',
+      'schimbare', 'change', 'creștere', 'crestere', 'growth',
+      'libertate', 'freedom', 'independență', 'independenta',
     ],
   },
 };
