@@ -100,20 +100,26 @@ export async function runPostCritiqueAction(
     post.visual_description ?? null,
   );
 
-  const critique = await generatePostCritique({
-    caption: post.caption,
-    transcript: post.transcript,
-    segments,
-    visualDescription: post.visual_description ?? null,
-    metrics,
-    postMetrics: {
-      erByReach: post.er_by_reach,
-      savesPerReach: post.saves_per_reach,
-      sendsPerReach: post.sends_per_reach,
-      reach: post.reach,
-    },
-    accountAvgEr: avgEr,
-  });
+  let critique;
+  try {
+    critique = await generatePostCritique({
+      caption: post.caption,
+      transcript: post.transcript,
+      segments,
+      visualDescription: post.visual_description ?? null,
+      metrics,
+      postMetrics: {
+        erByReach: post.er_by_reach,
+        savesPerReach: post.saves_per_reach,
+        sendsPerReach: post.sends_per_reach,
+        reach: post.reach,
+      },
+      accountAvgEr: avgEr,
+    });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    return { success: false, error: message };
+  }
 
   const { data: analysis } = await supabase
     .from('ai_analyses')
